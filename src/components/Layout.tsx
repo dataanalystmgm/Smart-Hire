@@ -83,7 +83,7 @@ export default function Layout({ children, user, setUser }: { children: React.Re
               <div className="w-10 h-10 bg-mgm-dark rounded-lg flex items-center justify-center">
                 <Briefcase className="text-white w-6 h-6" />
               </div>
-              <span className="font-extrabold text-2xl tracking-tight text-mgm-dark">MGM<span className="text-mgm-green">AI</span></span>
+              <span className="font-extrabold text-2xl tracking-tight text-mgm-dark">MGM<span className="text-mgm-green">SmartHire</span></span>
             </Link>
 
             {/* Desktop Navigation */}
@@ -205,7 +205,7 @@ export default function Layout({ children, user, setUser }: { children: React.Re
                   <div className="w-8 h-8 bg-mgm-green rounded-lg flex items-center justify-center">
                     <Briefcase className="text-white w-5 h-5" />
                   </div>
-                  <span className="font-bold text-xl tracking-tight">MGM<span className="text-mgm-yellow">AI</span></span>
+                  <span className="font-bold text-xl tracking-tight">MGM<span className="text-mgm-yellow">SmartHire</span></span>
                 </div>
                 <p className="text-white/70 text-sm max-w-xs">
                   Platform rekrutmen cerdas yang didukung oleh Artificial Intelligence untuk menemukan talenta terbaik dengan proses yang lebih efisien dan terukur.
