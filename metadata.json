@@ -1,0 +1,8 @@
+{
+  "name": "MGM SmartHire AI",
+  "description": "Platform rekrutmen AI dengan screening otomatis, tes online, dan integrasi Google Workspace.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

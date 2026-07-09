@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+@theme {
+  --color-mgm-dark: #315f66;
+  --color-mgm-green: #7eb578;
+  --color-mgm-olive: #dedc8a;
+  --color-mgm-yellow: #f5fcaa;
+  --color-mgm-light: #f8fbfb;
+}
+
+body {
+  background-color: var(--color-mgm-light);
+  color: var(--color-mgm-dark);
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
