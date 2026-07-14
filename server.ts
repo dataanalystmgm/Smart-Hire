@@ -89,19 +89,19 @@ Anda HARUS merespon menggunakan JSON murni dengan format persis seperti ini: {"s
 Deskripsi Pekerjaan:
 ${jobDescription}`;
 
-    const generateWithFallback = async (prompt, fileData) => {
+    const generateWithFallback = async (prompt: string, fileData?: any) => {
       const modelsToTry = ["gemini-3.5-flash", "gemini-3.1-pro", "gemini-3.1-flash-lite", "gemini-3.0-flash", "gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.5-flash-lite", "gemini-1.5-flash"];
       let lastError;
       
-      const contents = fileData ? [ { text: prompt },
+      const contents: any = fileData ? [ { text: prompt },
         { inlineData: { mimeType: fileData.mimeType, data: fileData.base64 } }
-      ] : { contents: prompt };
+      ] : prompt;
 
       for (const model of modelsToTry) {
         try {
-          return await ai.models.generateContent({ 
+          return await ai!.models.generateContent({ 
             model, 
-            contents: fileData ? contents : prompt 
+            contents
           });
         } catch (err) {
           lastError = err;
