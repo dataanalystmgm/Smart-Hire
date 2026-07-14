@@ -2,7 +2,6 @@ import express from "express";
 import path from "path";
 import multer from "multer";
 import { GoogleGenAI } from "@google/genai";
-import axios from "axios";
 
 const app = express();
 const PORT = 3000;
@@ -35,10 +34,13 @@ app.post("/api/gas/proxy", async (req, res) => {
   }
 
   try {
-    const response = await axios.post(gasUrl, req.body, {
-      headers: { "Content-Type": "application/json" }
+    const response = await fetch(gasUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req.body)
     });
-    res.json(response.data);
+    const data = await response.json();
+    res.json(data);
   } catch (error: any) {
     console.error("GAS proxy error:", error.message);
     res.status(500).json({ status: "error", message: "Failed to communicate with GAS" });
@@ -67,8 +69,13 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
   }
 
   try {
-    const response = await axios.post(gasUrl, payload, { headers: { "Content-Type": "application/json" } });
-    res.json(response.data);
+    const response = await fetch(gasUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json();
+    res.json(data);
   } catch (error: any) {
     res.status(500).json({ status: "error", message: "Upload failed" });
   }
