@@ -85,7 +85,7 @@ export default function Interview({ user }: { user: User }) {
       
       // 1. Fetch Applications from Sheet
       try {
-        const res = await fetch('/api/gas/proxy', {
+        const res = await fetch('https://script.google.com/macros/s/AKfycbxxQ9HDOmYQ7ThrqP-8gOpLfPnU3B0W18jAci-lTVWFCYA_WmDV4KIuEcAtcjIN2kPqiQ/exec', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'get_data', type: 'Applications' })
@@ -135,7 +135,7 @@ export default function Interview({ user }: { user: User }) {
 
       // 2. Fetch Interviews from Sheet
       try {
-        const res = await fetch('/api/gas/proxy', {
+        const res = await fetch('https://script.google.com/macros/s/AKfycbxxQ9HDOmYQ7ThrqP-8gOpLfPnU3B0W18jAci-lTVWFCYA_WmDV4KIuEcAtcjIN2kPqiQ/exec', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'get_data', type: 'Interviews' })
@@ -432,7 +432,7 @@ export default function Interview({ user }: { user: User }) {
       localStorage.setItem('mgm_interviews', JSON.stringify(cleanedInterviews));
 
       // Sync via GAS proxy to Google Sheet (kolom C sheet Interviews)
-      await fetch('/api/gas/proxy', {
+      await fetch('https://script.google.com/macros/s/AKfycbxxQ9HDOmYQ7ThrqP-8gOpLfPnU3B0W18jAci-lTVWFCYA_WmDV4KIuEcAtcjIN2kPqiQ/exec', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

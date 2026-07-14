@@ -59,7 +59,7 @@ export default function ApplicantDashboard({ user }: { user: User }) {
     // Fetch Applications from Sheet
     const fetchApplications = async () => {
       try {
-        const res = await fetch('/api/gas/proxy', {
+        const res = await fetch('https://script.google.com/macros/s/AKfycbxxQ9HDOmYQ7ThrqP-8gOpLfPnU3B0W18jAci-lTVWFCYA_WmDV4KIuEcAtcjIN2kPqiQ/exec', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'get_data', type: 'Applications' })
@@ -95,7 +95,7 @@ export default function ApplicantDashboard({ user }: { user: User }) {
     // Fetch Documents from Sheet
     const fetchDocuments = async () => {
       try {
-        const res = await fetch('/api/gas/proxy', {
+        const res = await fetch('https://script.google.com/macros/s/AKfycbxxQ9HDOmYQ7ThrqP-8gOpLfPnU3B0W18jAci-lTVWFCYA_WmDV4KIuEcAtcjIN2kPqiQ/exec', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'get_data', type: 'Documents' })
@@ -249,7 +249,7 @@ export default function ApplicantDashboard({ user }: { user: User }) {
     setUploading(true);
     setUploadStatus(`Menghapus ${type}...`);
     try {
-      await fetch('/api/gas/proxy', {
+      await fetch('https://script.google.com/macros/s/AKfycbxxQ9HDOmYQ7ThrqP-8gOpLfPnU3B0W18jAci-lTVWFCYA_WmDV4KIuEcAtcjIN2kPqiQ/exec', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'delete_document', userId: user.userId, documentType: type })

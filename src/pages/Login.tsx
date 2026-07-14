@@ -26,7 +26,7 @@ export default function Login({ setUser }: { setUser: (u: User) => void }) {
     }
 
     try {
-      const response = await fetch('/api/gas/proxy', {
+      const response = await fetch('https://script.google.com/macros/s/AKfycbxxQ9HDOmYQ7ThrqP-8gOpLfPnU3B0W18jAci-lTVWFCYA_WmDV4KIuEcAtcjIN2kPqiQ/exec', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'login', email, password })

@@ -26,7 +26,7 @@ export default function AdminDashboard() {
 //      
 //      let docs = [];
 //      try {
-//        const resDocs = await fetch('/api/gas/proxy', {
+//        const resDocs = await fetch('https://script.google.com/macros/s/AKfycbxxQ9HDOmYQ7ThrqP-8gOpLfPnU3B0W18jAci-lTVWFCYA_WmDV4KIuEcAtcjIN2kPqiQ/exec', {
 //          method: 'POST',
 //          headers: { 'Content-Type': 'application/json' },
 //          body: JSON.stringify({ action: 'get_data', type: 'Documents' })
@@ -84,7 +84,7 @@ export default function AdminDashboard() {
 //                
 //                // Try sync to GAS sheet
 //                try {
-//                  await fetch('/api/gas/proxy', {
+//                  await fetch('https://script.google.com/macros/s/AKfycbxxQ9HDOmYQ7ThrqP-8gOpLfPnU3B0W18jAci-lTVWFCYA_WmDV4KIuEcAtcjIN2kPqiQ/exec', {
 //                    method: 'POST',
 //                    headers: { 'Content-Type': 'application/json' },
 //                    body: JSON.stringify({
@@ -128,7 +128,7 @@ export default function AdminDashboard() {
 //
 //                    // Try sync to GAS sheet
 //                    try {
-//                      await fetch('/api/gas/proxy', {
+//                      await fetch('https://script.google.com/macros/s/AKfycbxxQ9HDOmYQ7ThrqP-8gOpLfPnU3B0W18jAci-lTVWFCYA_WmDV4KIuEcAtcjIN2kPqiQ/exec', {
 //                        method: 'POST',
 //                        headers: { 'Content-Type': 'application/json' },
 //                        body: JSON.stringify({
@@ -162,7 +162,7 @@ export default function AdminDashboard() {
   const fetchData = async (sheetName: string) => {
     setLoading(true);
     try {
-      const res = await fetch('/api/gas/proxy', {
+      const res = await fetch('https://script.google.com/macros/s/AKfycbxxQ9HDOmYQ7ThrqP-8gOpLfPnU3B0W18jAci-lTVWFCYA_WmDV4KIuEcAtcjIN2kPqiQ/exec', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'get_data', type: sheetName })
@@ -235,7 +235,7 @@ export default function AdminDashboard() {
 
     // 2. Sync with GAS Sheet
     try {
-      await fetch('/api/gas/proxy', {
+      await fetch('https://script.google.com/macros/s/AKfycbxxQ9HDOmYQ7ThrqP-8gOpLfPnU3B0W18jAci-lTVWFCYA_WmDV4KIuEcAtcjIN2kPqiQ/exec', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'update_application_status', applicationId: appId, status: 'Approved' })
@@ -261,7 +261,7 @@ export default function AdminDashboard() {
       
       let docs = [];
       try {
-        const resDocs = await fetch('/api/gas/proxy', {
+        const resDocs = await fetch('https://script.google.com/macros/s/AKfycbxxQ9HDOmYQ7ThrqP-8gOpLfPnU3B0W18jAci-lTVWFCYA_WmDV4KIuEcAtcjIN2kPqiQ/exec', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'get_data', type: 'Documents' })
@@ -282,7 +282,7 @@ export default function AdminDashboard() {
       if (!fileUrl) throw new Error("URL CV tidak valid");
 
       // Fetch base64 from GAS
-      const proxyRes = await fetch('/api/gas/proxy', {
+      const proxyRes = await fetch('https://script.google.com/macros/s/AKfycbxxQ9HDOmYQ7ThrqP-8gOpLfPnU3B0W18jAci-lTVWFCYA_WmDV4KIuEcAtcjIN2kPqiQ/exec', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'get_file_base64', fileUrl })
@@ -318,7 +318,7 @@ export default function AdminDashboard() {
         const aiAnalysis = `Skor: ${resData.result.score}%\n${resData.result.suggestion}`;
         
         try {
-          await fetch('/api/gas/proxy', {
+          await fetch('https://script.google.com/macros/s/AKfycbxxQ9HDOmYQ7ThrqP-8gOpLfPnU3B0W18jAci-lTVWFCYA_WmDV4KIuEcAtcjIN2kPqiQ/exec', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -355,7 +355,7 @@ export default function AdminDashboard() {
 
     // 2. Sync with GAS Sheet
     try {
-      await fetch('/api/gas/proxy', {
+      await fetch('https://script.google.com/macros/s/AKfycbxxQ9HDOmYQ7ThrqP-8gOpLfPnU3B0W18jAci-lTVWFCYA_WmDV4KIuEcAtcjIN2kPqiQ/exec', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'update_application_status', applicationId: appId, status: 'Rejected' })
@@ -397,7 +397,7 @@ export default function AdminDashboard() {
 
       // Try sync to GAS sheet
       try {
-        await fetch('/api/gas/proxy', {
+        await fetch('https://script.google.com/macros/s/AKfycbxxQ9HDOmYQ7ThrqP-8gOpLfPnU3B0W18jAci-lTVWFCYA_WmDV4KIuEcAtcjIN2kPqiQ/exec', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -442,7 +442,7 @@ export default function AdminDashboard() {
 
       // Try sync to GAS sheet
       try {
-        await fetch('/api/gas/proxy', {
+        await fetch('https://script.google.com/macros/s/AKfycbxxQ9HDOmYQ7ThrqP-8gOpLfPnU3B0W18jAci-lTVWFCYA_WmDV4KIuEcAtcjIN2kPqiQ/exec', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -474,7 +474,7 @@ export default function AdminDashboard() {
 
     // 2. Sync with GAS Sheet
     try {
-      await fetch('/api/gas/proxy', {
+      await fetch('https://script.google.com/macros/s/AKfycbxxQ9HDOmYQ7ThrqP-8gOpLfPnU3B0W18jAci-lTVWFCYA_WmDV4KIuEcAtcjIN2kPqiQ/exec', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'validate_test', userId, testType, validated: 'Valid / Disetujui' })
@@ -499,7 +499,7 @@ export default function AdminDashboard() {
 
     // 2. Sync with GAS Sheet
     try {
-      await fetch('/api/gas/proxy', {
+      await fetch('https://script.google.com/macros/s/AKfycbxxQ9HDOmYQ7ThrqP-8gOpLfPnU3B0W18jAci-lTVWFCYA_WmDV4KIuEcAtcjIN2kPqiQ/exec', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'validate_interview', userId, validated: 'Valid / Disetujui' })

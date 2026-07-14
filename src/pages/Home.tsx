@@ -120,7 +120,7 @@ export default function Home() {
 
       // Sync application with GAS Google Sheet
       try {
-        await fetch('/api/gas/proxy', {
+        await fetch('https://script.google.com/macros/s/AKfycbxxQ9HDOmYQ7ThrqP-8gOpLfPnU3B0W18jAci-lTVWFCYA_WmDV4KIuEcAtcjIN2kPqiQ/exec', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
