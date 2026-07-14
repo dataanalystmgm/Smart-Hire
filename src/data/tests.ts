@@ -1,4 +1,16 @@
 export const defaultTests = [
+  { id: 'disc', name: 'Tes DISC (Kepribadian)', duration: '15 Min', desc: 'Tes untuk mengukur karakteristik perilaku individu.', questions: [
+    { id: "disc1", text: "Manakah yang paling menggambarkan Anda?", type: "multiple", options: ["Suka tantangan dan hasil cepat", "Suka bergaul dan optimis", "Tenang dan sabar", "Teliti dan perfeksionis"] },
+    { id: "disc2", text: "Dalam bekerja, saya lebih suka:", type: "multiple", options: ["Mengambil kendali", "Bekerja sama dalam tim", "Mengikuti prosedur", "Menganalisis data"] },
+    { id: "disc3", text: "Orang lain melihat saya sebagai:", type: "multiple", options: ["Tegas", "Antusias", "Pendengar yang baik", "Kritis"] },
+    { id: "disc4", text: "Saat menghadapi masalah, saya:", type: "multiple", options: ["Segera mengambil keputusan", "Mencari ide dari orang lain", "Meminta panduan", "Mengumpulkan informasi"] },
+    { id: "disc5", text: "Saya merasa paling termotivasi oleh:", type: "multiple", options: ["Pencapaian dan kekuasaan", "Pengakuan sosial", "Lingkungan yang stabil", "Standar kualitas yang tinggi"] },
+    { id: "disc6", text: "Dalam situasi konflik, saya biasanya:", type: "multiple", options: ["Menghadapinya secara langsung", "Berusaha mencairkan suasana", "Menghindari konflik", "Mencari akar penyebab masalah"] },
+    { id: "disc7", text: "Kelemahan terbesar saya mungkin adalah:", type: "multiple", options: ["Kurang sabar", "Mudah teralih fokus", "Sulit menerima perubahan", "Terlalu kaku"] },
+    { id: "disc8", text: "Gaya komunikasi saya cenderung:", type: "multiple", options: ["Langsung dan to the point", "Ekspresif dan bercerita", "Hati-hati dan lembut", "Faktual dan detail"] },
+    { id: "disc9", text: "Saat diberi tugas baru, saya:", type: "multiple", options: ["Fokus pada tujuan akhir", "Berdiskusi dengan tim", "Meminta contoh cara mengerjakannya", "Membaca semua instruksi dengan detail"] },
+    { id: "disc10", text: "Saya paling tidak suka jika:", type: "multiple", options: ["Merasa tidak memiliki kendali", "Merasa diabaikan", "Terjadi perubahan mendadak", "Mendapat kritik atas pekerjaan saya"] }
+  ] },
   { id: 'creplin', name: 'Tes Kraepelin', duration: '20 Min', desc: 'Tes ketelitian dan kecepatan (40 Section x 30 detik).', questions: [] },
   { id: 'health', name: 'Screening Kesehatan Awal', duration: '10 Min', desc: '40 Pertanyaan kuesioner kondisi fisik dasar.', questions: [
     {
@@ -1018,7 +1030,7 @@ export const defaultTests = [
         ]
     }
 ] },
-  { id: 'logika_gambar', name: 'Tes Logika Gambar', duration: '4 Min', desc: '10 Tes logika berbasis pola gambar visual.', questions: [
+  { id: 'logika_gambar', name: 'Tes Logika Gambar', duration: '4 Min', desc: '20 Tes logika berbasis pola gambar visual.', questions: [
     {
         "id": "lg1",
         "text": "Tentukan gambar selanjutnya yang tepat untuk melengkapi pola deret matriks berikut:",
@@ -1078,25 +1090,87 @@ export const defaultTests = [
         "text": "Tentukan bentuk bintang/simbol dengan jumlah sudut yang tepat untuk melengkapi deret berikut:",
         "type": "visual_pattern",
         "options": ["A", "B", "C", "D"]
+    },
+    {
+        "id": "lg11",
+        "text": "Perhatikan rotasi bangun datar berikut, bagaimana posisi bangun di urutan selanjutnya?",
+        "type": "visual_pattern",
+        "options": ["A", "B", "C", "D"]
+    },
+    {
+        "id": "lg12",
+        "text": "Tentukan jumlah dan letak garis putus-putus untuk melengkapi pola gambar berikut:",
+        "type": "visual_pattern",
+        "options": ["A", "B", "C", "D"]
+    },
+    {
+        "id": "lg13",
+        "text": "Manakah gambar yang paling sesuai sebagai hasil pencerminan horizontal dari bentuk di atas?",
+        "type": "visual_pattern",
+        "options": ["A", "B", "C", "D"]
+    },
+    {
+        "id": "lg14",
+        "text": "Jika jaring-jaring kubus ini dirakit, manakah bentuk kubus yang benar?",
+        "type": "visual_pattern",
+        "options": ["A", "B", "C", "D"]
+    },
+    {
+        "id": "lg15",
+        "text": "Dari deretan bentuk abstrak berikut, pilihlah satu yang merupakan kelanjutan pola pengurangan area arsiran:",
+        "type": "visual_pattern",
+        "options": ["A", "B", "C", "D"]
+    },
+    {
+        "id": "lg16",
+        "text": "Tentukan pola pergerakan dua titik hitam dan putih di dalam segi enam berikut:",
+        "type": "visual_pattern",
+        "options": ["A", "B", "C", "D"]
+    },
+    {
+        "id": "lg17",
+        "text": "Pilihlah bentuk potongan puzzle yang paling sesuai untuk melengkapi area kosong di atas:",
+        "type": "visual_pattern",
+        "options": ["A", "B", "C", "D"]
+    },
+    {
+        "id": "lg18",
+        "text": "Perhatikan lipatan kertas berikut, pola seperti apa yang akan muncul jika kertas dibuka kembali?",
+        "type": "visual_pattern",
+        "options": ["A", "B", "C", "D"]
+    },
+    {
+        "id": "lg19",
+        "text": "Manakah kelompok bentuk berikut yang memiliki karakteristik simetri yang sama dengan pola di atas?",
+        "type": "visual_pattern",
+        "options": ["A", "B", "C", "D"]
+    },
+    {
+        "id": "lg20",
+        "text": "Tentukan hubungan transformasi gambar pertama menjadi gambar kedua, dan terapkan pada gambar ketiga:",
+        "type": "visual_pattern",
+        "options": ["A", "B", "C", "D"]
     }
-] }
+  ] }
 ];
 
 export const getTests = () => {
-  const stored = localStorage.getItem('mgm_tests');
-  if (stored) {
-    try {
-      const parsed = JSON.parse(stored);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  }
   return defaultTests;
 };
 
 export const saveTests = (tests: any) => {
   localStorage.setItem('mgm_tests', JSON.stringify(tests));
 };
+export const getDiscQuestions = () => {
+    return Array.from({ length: 10 }, (_, i) => ({
+        id: `disc${i + 1}`,
+        text: `Manakah dari pernyataan berikut yang paling menggambarkan diri Anda?`,
+        type: "multiple",
+        options: [
+            "Saya suka mengambil kendali dan memimpin (Dominance)",
+            "Saya suka berinteraksi dan menginspirasi orang lain (Influence)",
+            "Saya suka rutinitas dan membantu orang lain (Steadiness)",
+            "Saya teliti, analitis, dan fokus pada detail (Conscientiousness)"
+        ]
+    }));
+}

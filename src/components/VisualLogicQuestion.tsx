@@ -359,6 +359,157 @@ export default function VisualLogicQuestion({ questionId, selectedOption, onChan
           </div>
         );
 
+      
+      
+      case 'lg11':
+        return (
+          <div className="flex items-center space-x-2 md:space-x-3">
+            <div className={boxClass}><span className={labelClass}>1</span><svg width="60" height="60" viewBox="0 0 60 60"><circle cx="30" cy="30" r="10" stroke="#3b82f6" strokeWidth="2" fill="none"/></svg></div>
+            <span className="text-slate-400 font-bold">&rarr;</span>
+            <div className={boxClass}><span className={labelClass}>2</span><svg width="60" height="60" viewBox="0 0 60 60"><circle cx="30" cy="30" r="15" stroke="#10b981" strokeWidth="2" fill="none"/></svg></div>
+            <span className="text-slate-400 font-bold">&rarr;</span>
+            <div className={boxClass}><span className={labelClass}>3</span><svg width="60" height="60" viewBox="0 0 60 60"><circle cx="30" cy="30" r="20" stroke="#8b5cf6" strokeWidth="2" fill="none"/></svg></div>
+            <span className="text-slate-400 font-bold">&rarr;</span>
+            <div className={`${boxClass} bg-slate-100 border-2 border-dashed border-mgm-green/40`}>
+              <span className="text-mgm-green font-extrabold text-2xl">?</span>
+            </div>
+          </div>
+        );
+
+      case 'lg12':
+        return (
+          <div className="flex items-center space-x-2 md:space-x-3">
+            <div className={boxClass}><span className={labelClass}>1</span><svg width="60" height="60" viewBox="0 0 60 60"><line x1="10" y1="30" x2="50" y2="30" stroke="#3b82f6" strokeWidth="2"/></svg></div>
+            <span className="text-slate-400 font-bold">&rarr;</span>
+            <div className={boxClass}><span className={labelClass}>2</span><svg width="60" height="60" viewBox="0 0 60 60"><line x1="10" y1="30" x2="50" y2="30" stroke="#10b981" strokeWidth="2" strokeDasharray="5,5"/></svg></div>
+            <span className="text-slate-400 font-bold">&rarr;</span>
+            <div className={boxClass}><span className={labelClass}>3</span><svg width="60" height="60" viewBox="0 0 60 60"><line x1="10" y1="30" x2="50" y2="30" stroke="#8b5cf6" strokeWidth="2" strokeDasharray="2,2"/></svg></div>
+            <span className="text-slate-400 font-bold">&rarr;</span>
+            <div className={`${boxClass} bg-slate-100 border-2 border-dashed border-mgm-green/40`}>
+              <span className="text-mgm-green font-extrabold text-2xl">?</span>
+            </div>
+          </div>
+        );
+
+      case 'lg13':
+        return (
+          <div className="flex items-center space-x-2 md:space-x-3">
+            <div className={boxClass}><span className={labelClass}>1</span><svg width="60" height="60" viewBox="0 0 60 60"><polygon points="20,10 40,30 20,50" fill="#3b82f6"/></svg></div>
+            <span className="text-slate-400 font-bold">&rarr;</span>
+            <div className={boxClass}><span className={labelClass}>2</span><svg width="60" height="60" viewBox="0 0 60 60"><polygon points="40,10 20,30 40,50" fill="#10b981"/></svg></div>
+            <span className="text-slate-400 font-bold">&rarr;</span>
+            <div className={boxClass}><span className={labelClass}>3</span><svg width="60" height="60" viewBox="0 0 60 60"><polygon points="30,10 50,30 30,50" fill="#8b5cf6"/></svg></div>
+            <span className="text-slate-400 font-bold">&rarr;</span>
+            <div className={`${boxClass} bg-slate-100 border-2 border-dashed border-mgm-green/40`}>
+              <span className="text-mgm-green font-extrabold text-2xl">?</span>
+            </div>
+          </div>
+        );
+
+      case 'lg14':
+        return (
+          <div className="flex items-center space-x-2 md:space-x-3">
+            <div className={boxClass}><span className={labelClass}>1</span><svg width="60" height="60" viewBox="0 0 60 60"><rect x="20" y="20" width="20" height="20" fill="#3b82f6"/><rect x="20" y="0" width="20" height="20" fill="#cbd5e1"/><rect x="20" y="40" width="20" height="20" fill="#cbd5e1"/><rect x="0" y="20" width="20" height="20" fill="#cbd5e1"/><rect x="40" y="20" width="20" height="20" fill="#cbd5e1"/></svg></div>
+            <span className="text-slate-400 font-bold">&rarr;</span>
+            <div className={boxClass}><span className={labelClass}>2</span><svg width="60" height="60" viewBox="0 0 60 60"><polygon points="30,10 50,20 50,40 30,50 10,40 10,20" fill="none" stroke="#10b981" strokeWidth="2"/><polygon points="30,10 30,30 50,20" fill="none" stroke="#10b981" strokeWidth="2"/><polygon points="30,30 10,20" fill="none" stroke="#10b981" strokeWidth="2"/><polygon points="30,30 30,50" fill="none" stroke="#10b981" strokeWidth="2"/></svg></div>
+            <span className="text-slate-400 font-bold">&rarr;</span>
+            <div className={boxClass}><span className={labelClass}>3</span><svg width="60" height="60" viewBox="0 0 60 60"><rect x="25" y="25" width="10" height="10" fill="#8b5cf6"/><rect x="25" y="15" width="10" height="10" fill="#cbd5e1"/><rect x="25" y="35" width="10" height="10" fill="#cbd5e1"/><rect x="15" y="25" width="10" height="10" fill="#cbd5e1"/><rect x="35" y="25" width="10" height="10" fill="#cbd5e1"/></svg></div>
+            <span className="text-slate-400 font-bold">&rarr;</span>
+            <div className={`${boxClass} bg-slate-100 border-2 border-dashed border-mgm-green/40`}>
+              <span className="text-mgm-green font-extrabold text-2xl">?</span>
+            </div>
+          </div>
+        );
+
+      case 'lg15':
+        return (
+          <div className="flex items-center space-x-2 md:space-x-3">
+            <div className={boxClass}><span className={labelClass}>1</span><svg width="60" height="60" viewBox="0 0 60 60"><rect x="10" y="10" width="40" height="40" fill="#3b82f6"/></svg></div>
+            <span className="text-slate-400 font-bold">&rarr;</span>
+            <div className={boxClass}><span className={labelClass}>2</span><svg width="60" height="60" viewBox="0 0 60 60"><rect x="10" y="10" width="40" height="40" fill="none" stroke="#10b981" strokeWidth="2"/><rect x="10" y="10" width="40" height="20" fill="#10b981"/></svg></div>
+            <span className="text-slate-400 font-bold">&rarr;</span>
+            <div className={boxClass}><span className={labelClass}>3</span><svg width="60" height="60" viewBox="0 0 60 60"><rect x="10" y="10" width="40" height="40" fill="none" stroke="#8b5cf6" strokeWidth="2"/><rect x="10" y="10" width="20" height="20" fill="#8b5cf6"/></svg></div>
+            <span className="text-slate-400 font-bold">&rarr;</span>
+            <div className={`${boxClass} bg-slate-100 border-2 border-dashed border-mgm-green/40`}>
+              <span className="text-mgm-green font-extrabold text-2xl">?</span>
+            </div>
+          </div>
+        );
+
+      case 'lg16':
+        return (
+          <div className="flex items-center space-x-2 md:space-x-3">
+            <div className={boxClass}><span className={labelClass}>1</span><svg width="60" height="60" viewBox="0 0 60 60"><polygon points="30,10 50,20 50,40 30,50 10,40 10,20" fill="none" stroke="#3b82f6" strokeWidth="2"/><circle cx="30" cy="15" r="4" fill="#000"/><circle cx="30" cy="45" r="4" fill="#fff" stroke="#000" strokeWidth="1"/></svg></div>
+            <span className="text-slate-400 font-bold">&rarr;</span>
+            <div className={boxClass}><span className={labelClass}>2</span><svg width="60" height="60" viewBox="0 0 60 60"><polygon points="30,10 50,20 50,40 30,50 10,40 10,20" fill="none" stroke="#10b981" strokeWidth="2"/><circle cx="45" cy="25" r="4" fill="#000"/><circle cx="15" cy="35" r="4" fill="#fff" stroke="#000" strokeWidth="1"/></svg></div>
+            <span className="text-slate-400 font-bold">&rarr;</span>
+            <div className={boxClass}><span className={labelClass}>3</span><svg width="60" height="60" viewBox="0 0 60 60"><polygon points="30,10 50,20 50,40 30,50 10,40 10,20" fill="none" stroke="#8b5cf6" strokeWidth="2"/><circle cx="45" cy="35" r="4" fill="#000"/><circle cx="15" cy="25" r="4" fill="#fff" stroke="#000" strokeWidth="1"/></svg></div>
+            <span className="text-slate-400 font-bold">&rarr;</span>
+            <div className={`${boxClass} bg-slate-100 border-2 border-dashed border-mgm-green/40`}>
+              <span className="text-mgm-green font-extrabold text-2xl">?</span>
+            </div>
+          </div>
+        );
+
+      case 'lg17':
+        return (
+          <div className="flex items-center space-x-2 md:space-x-3">
+            <div className={boxClass}><span className={labelClass}>1</span><svg width="60" height="60" viewBox="0 0 60 60"><rect x="10" y="10" width="40" height="40" fill="#3b82f6"/><circle cx="30" cy="10" r="8" fill="#fff"/></svg></div>
+            <span className="text-slate-400 font-bold">&rarr;</span>
+            <div className={boxClass}><span className={labelClass}>2</span><svg width="60" height="60" viewBox="0 0 60 60"><rect x="10" y="10" width="40" height="40" fill="#10b981"/><circle cx="50" cy="30" r="8" fill="#fff"/></svg></div>
+            <span className="text-slate-400 font-bold">&rarr;</span>
+            <div className={boxClass}><span className={labelClass}>3</span><svg width="60" height="60" viewBox="0 0 60 60"><rect x="10" y="10" width="40" height="40" fill="#8b5cf6"/><circle cx="30" cy="50" r="8" fill="#fff"/></svg></div>
+            <span className="text-slate-400 font-bold">&rarr;</span>
+            <div className={`${boxClass} bg-slate-100 border-2 border-dashed border-mgm-green/40`}>
+              <span className="text-mgm-green font-extrabold text-2xl">?</span>
+            </div>
+          </div>
+        );
+
+      case 'lg18':
+        return (
+          <div className="flex items-center space-x-2 md:space-x-3">
+            <div className={boxClass}><span className={labelClass}>1</span><svg width="60" height="60" viewBox="0 0 60 60"><polygon points="10,10 50,10 50,50 10,50" fill="none" stroke="#3b82f6" strokeWidth="2"/><line x1="10" y1="50" x2="50" y2="10" stroke="#3b82f6" strokeWidth="2" strokeDasharray="3,3"/><circle cx="20" cy="20" r="3" fill="#3b82f6"/></svg></div>
+            <span className="text-slate-400 font-bold">&rarr;</span>
+            <div className={boxClass}><span className={labelClass}>2</span><svg width="60" height="60" viewBox="0 0 60 60"><polygon points="10,10 50,10 10,50" fill="#10b981" stroke="#10b981" strokeWidth="2"/><circle cx="20" cy="20" r="3" fill="#fff"/></svg></div>
+            <span className="text-slate-400 font-bold">&rarr;</span>
+            <div className={boxClass}><span className={labelClass}>3</span><svg width="60" height="60" viewBox="0 0 60 60"><polygon points="10,10 50,10 10,50" fill="none" stroke="#8b5cf6" strokeWidth="2"/><line x1="10" y1="10" x2="30" y2="30" stroke="#8b5cf6" strokeWidth="2" strokeDasharray="3,3"/><circle cx="20" cy="20" r="3" fill="#8b5cf6"/></svg></div>
+            <span className="text-slate-400 font-bold">&rarr;</span>
+            <div className={`${boxClass} bg-slate-100 border-2 border-dashed border-mgm-green/40`}>
+              <span className="text-mgm-green font-extrabold text-2xl">?</span>
+            </div>
+          </div>
+        );
+
+      case 'lg19':
+        return (
+          <div className="flex items-center space-x-2 md:space-x-3">
+            <div className={boxClass}><span className={labelClass}>1</span><svg width="60" height="60" viewBox="0 0 60 60"><path d="M30 10 C 40 10, 50 20, 50 30 C 50 40, 40 50, 30 50" fill="none" stroke="#3b82f6" strokeWidth="2"/><line x1="30" y1="5" x2="30" y2="55" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="2,2"/></svg></div>
+            <span className="text-slate-400 font-bold">&rarr;</span>
+            <div className={boxClass}><span className={labelClass}>2</span><svg width="60" height="60" viewBox="0 0 60 60"><path d="M30 10 C 20 10, 10 20, 10 30 C 10 40, 20 50, 30 50" fill="none" stroke="#10b981" strokeWidth="2"/><line x1="30" y1="5" x2="30" y2="55" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="2,2"/></svg></div>
+            <span className="text-slate-400 font-bold">&rarr;</span>
+            <div className={boxClass}><span className={labelClass}>3</span><svg width="60" height="60" viewBox="0 0 60 60"><path d="M10 30 C 10 20, 20 10, 30 10 C 40 10, 50 20, 50 30" fill="none" stroke="#8b5cf6" strokeWidth="2"/><line x1="5" y1="30" x2="55" y2="30" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="2,2"/></svg></div>
+            <span className="text-slate-400 font-bold">&rarr;</span>
+            <div className={`${boxClass} bg-slate-100 border-2 border-dashed border-mgm-green/40`}>
+              <span className="text-mgm-green font-extrabold text-2xl">?</span>
+            </div>
+          </div>
+        );
+
+      case 'lg20':
+        return (
+          <div className="flex items-center space-x-2 md:space-x-3">
+            <div className={boxClass}><span className={labelClass}>1</span><svg width="60" height="60" viewBox="0 0 60 60"><rect x="20" y="20" width="20" height="20" fill="none" stroke="#3b82f6" strokeWidth="2"/><circle cx="30" cy="30" r="5" fill="#3b82f6"/></svg></div>
+            <span className="text-slate-400 font-bold">&rarr;</span>
+            <div className={boxClass}><span className={labelClass}>2</span><svg width="60" height="60" viewBox="0 0 60 60"><circle cx="30" cy="30" r="10" fill="none" stroke="#10b981" strokeWidth="2"/><rect x="25" y="25" width="10" height="10" fill="#10b981"/></svg></div>
+            <span className="text-slate-400 font-bold">&rarr;</span>
+            <div className={boxClass}><span className={labelClass}>3</span><svg width="60" height="60" viewBox="0 0 60 60"><polygon points="30,15 45,40 15,40" fill="none" stroke="#8b5cf6" strokeWidth="2"/><polygon points="30,25 35,35 25,35" fill="#8b5cf6"/></svg></div>
+            <span className="text-slate-400 font-bold">&rarr;</span>
+            <div className={`${boxClass} bg-slate-100 border-2 border-dashed border-mgm-green/40`}>
+              <span className="text-mgm-green font-extrabold text-2xl">?</span>
+            </div>
+          </div>
+        );
       default:
         return null;
     }
@@ -688,6 +839,67 @@ export default function VisualLogicQuestion({ questionId, selectedOption, onChan
           );
         }
 
+      
+      
+      case 'lg11':
+        if (opt === 'A') { return <svg width="50" height="50" viewBox="0 0 60 60"><circle cx="30" cy="30" r="25" stroke="#f59e0b" strokeWidth="2" fill="none"/></svg>; }
+        else if (opt === 'B') { return <svg width="50" height="50" viewBox="0 0 60 60"><circle cx="30" cy="30" r="20" stroke="#f59e0b" strokeWidth="4" fill="none"/></svg>; }
+        else if (opt === 'C') { return <svg width="50" height="50" viewBox="0 0 60 60"><rect x="5" y="5" width="50" height="50" stroke="#f59e0b" strokeWidth="2" fill="none"/></svg>; }
+        else { return <svg width="50" height="50" viewBox="0 0 60 60"><circle cx="30" cy="30" r="30" stroke="#f59e0b" strokeWidth="1" fill="none"/></svg>; }
+
+      case 'lg12':
+        if (opt === 'A') { return <svg width="50" height="50" viewBox="0 0 60 60"><line x1="10" y1="30" x2="50" y2="30" stroke="#f59e0b" strokeWidth="2" strokeDasharray="1,1"/></svg>; }
+        else if (opt === 'B') { return <svg width="50" height="50" viewBox="0 0 60 60"><line x1="10" y1="30" x2="50" y2="30" stroke="#f59e0b" strokeWidth="4" strokeDasharray="10,10"/></svg>; }
+        else if (opt === 'C') { return <svg width="50" height="50" viewBox="0 0 60 60"><line x1="30" y1="10" x2="30" y2="50" stroke="#f59e0b" strokeWidth="2" strokeDasharray="1,1"/></svg>; }
+        else { return <svg width="50" height="50" viewBox="0 0 60 60"><line x1="10" y1="10" x2="50" y2="50" stroke="#f59e0b" strokeWidth="2" strokeDasharray="1,1"/></svg>; }
+
+      case 'lg13':
+        if (opt === 'A') { return <svg width="50" height="50" viewBox="0 0 60 60"><polygon points="30,10 10,30 30,50" fill="#f59e0b"/></svg>; }
+        else if (opt === 'B') { return <svg width="50" height="50" viewBox="0 0 60 60"><polygon points="10,10 30,30 10,50" fill="#f59e0b"/></svg>; }
+        else if (opt === 'C') { return <svg width="50" height="50" viewBox="0 0 60 60"><polygon points="10,30 50,30 30,10" fill="#f59e0b"/></svg>; }
+        else { return <svg width="50" height="50" viewBox="0 0 60 60"><polygon points="30,10 30,50 50,30" fill="#f59e0b"/></svg>; }
+
+      case 'lg14':
+        if (opt === 'A') { return <svg width="50" height="50" viewBox="0 0 60 60"><polygon points="30,20 40,25 40,35 30,40 20,35 20,25" fill="none" stroke="#f59e0b" strokeWidth="2"/><polygon points="30,20 30,30 40,25" fill="none" stroke="#f59e0b" strokeWidth="2"/><polygon points="30,30 20,25" fill="none" stroke="#f59e0b" strokeWidth="2"/><polygon points="30,30 30,40" fill="none" stroke="#f59e0b" strokeWidth="2"/></svg>; }
+        else if (opt === 'B') { return <svg width="50" height="50" viewBox="0 0 60 60"><rect x="20" y="20" width="20" height="20" fill="none" stroke="#f59e0b" strokeWidth="2"/></svg>; }
+        else if (opt === 'C') { return <svg width="50" height="50" viewBox="0 0 60 60"><polygon points="30,10 50,50 10,50" fill="none" stroke="#f59e0b" strokeWidth="2"/></svg>; }
+        else { return <svg width="50" height="50" viewBox="0 0 60 60"><circle cx="30" cy="30" r="15" fill="none" stroke="#f59e0b" strokeWidth="2"/></svg>; }
+
+      case 'lg15':
+        if (opt === 'A') { return <svg width="50" height="50" viewBox="0 0 60 60"><rect x="10" y="10" width="40" height="40" fill="none" stroke="#f59e0b" strokeWidth="2"/></svg>; }
+        else if (opt === 'B') { return <svg width="50" height="50" viewBox="0 0 60 60"><rect x="10" y="10" width="40" height="40" fill="none" stroke="#f59e0b" strokeWidth="2"/><rect x="30" y="30" width="20" height="20" fill="#f59e0b"/></svg>; }
+        else if (opt === 'C') { return <svg width="50" height="50" viewBox="0 0 60 60"><rect x="10" y="10" width="40" height="40" fill="none" stroke="#f59e0b" strokeWidth="2"/><rect x="10" y="10" width="40" height="10" fill="#f59e0b"/></svg>; }
+        else { return <svg width="50" height="50" viewBox="0 0 60 60"><rect x="10" y="10" width="40" height="40" fill="none" stroke="#f59e0b" strokeWidth="2"/><rect x="10" y="10" width="20" height="40" fill="#f59e0b"/></svg>; }
+
+      case 'lg16':
+        if (opt === 'A') { return <svg width="50" height="50" viewBox="0 0 60 60"><polygon points="30,10 50,20 50,40 30,50 10,40 10,20" fill="none" stroke="#f59e0b" strokeWidth="2"/><circle cx="30" cy="45" r="4" fill="#000"/><circle cx="30" cy="15" r="4" fill="#fff" stroke="#000" strokeWidth="1"/></svg>; }
+        else if (opt === 'B') { return <svg width="50" height="50" viewBox="0 0 60 60"><polygon points="30,10 50,20 50,40 30,50 10,40 10,20" fill="none" stroke="#f59e0b" strokeWidth="2"/><circle cx="15" cy="35" r="4" fill="#000"/><circle cx="45" cy="25" r="4" fill="#fff" stroke="#000" strokeWidth="1"/></svg>; }
+        else if (opt === 'C') { return <svg width="50" height="50" viewBox="0 0 60 60"><polygon points="30,10 50,20 50,40 30,50 10,40 10,20" fill="none" stroke="#f59e0b" strokeWidth="2"/><circle cx="15" cy="25" r="4" fill="#000"/><circle cx="45" cy="35" r="4" fill="#fff" stroke="#000" strokeWidth="1"/></svg>; }
+        else { return <svg width="50" height="50" viewBox="0 0 60 60"><polygon points="30,10 50,20 50,40 30,50 10,40 10,20" fill="none" stroke="#f59e0b" strokeWidth="2"/><circle cx="30" cy="30" r="4" fill="#000"/><circle cx="30" cy="30" r="4" fill="#fff" stroke="#000" strokeWidth="1"/></svg>; }
+
+      case 'lg17':
+        if (opt === 'A') { return <svg width="50" height="50" viewBox="0 0 60 60"><rect x="10" y="10" width="40" height="40" fill="#f59e0b"/><circle cx="10" cy="30" r="8" fill="#fff"/></svg>; }
+        else if (opt === 'B') { return <svg width="50" height="50" viewBox="0 0 60 60"><rect x="10" y="10" width="40" height="40" fill="#f59e0b"/><circle cx="30" cy="30" r="8" fill="#fff"/></svg>; }
+        else if (opt === 'C') { return <svg width="50" height="50" viewBox="0 0 60 60"><rect x="10" y="10" width="40" height="40" fill="#f59e0b"/><circle cx="10" cy="10" r="8" fill="#fff"/></svg>; }
+        else { return <svg width="50" height="50" viewBox="0 0 60 60"><rect x="10" y="10" width="40" height="40" fill="#f59e0b"/><circle cx="50" cy="50" r="8" fill="#fff"/></svg>; }
+
+      case 'lg18':
+        if (opt === 'A') { return <svg width="50" height="50" viewBox="0 0 60 60"><polygon points="10,10 50,10 50,50 10,50" fill="none" stroke="#f59e0b" strokeWidth="2"/><circle cx="20" cy="20" r="3" fill="#f59e0b"/><circle cx="40" cy="40" r="3" fill="#f59e0b"/></svg>; }
+        else if (opt === 'B') { return <svg width="50" height="50" viewBox="0 0 60 60"><polygon points="10,10 50,10 50,50 10,50" fill="none" stroke="#f59e0b" strokeWidth="2"/><circle cx="20" cy="20" r="3" fill="#f59e0b"/><circle cx="40" cy="20" r="3" fill="#f59e0b"/></svg>; }
+        else if (opt === 'C') { return <svg width="50" height="50" viewBox="0 0 60 60"><polygon points="10,10 50,10 50,50 10,50" fill="none" stroke="#f59e0b" strokeWidth="2"/><circle cx="20" cy="20" r="3" fill="#f59e0b"/><circle cx="20" cy="40" r="3" fill="#f59e0b"/></svg>; }
+        else { return <svg width="50" height="50" viewBox="0 0 60 60"><polygon points="10,10 50,10 50,50 10,50" fill="none" stroke="#f59e0b" strokeWidth="2"/><circle cx="20" cy="20" r="3" fill="#f59e0b"/></svg>; }
+
+      case 'lg19':
+        if (opt === 'A') { return <svg width="50" height="50" viewBox="0 0 60 60"><path d="M10 30 C 10 40, 20 50, 30 50 C 40 50, 50 40, 50 30" fill="none" stroke="#f59e0b" strokeWidth="2"/><line x1="5" y1="30" x2="55" y2="30" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="2,2"/></svg>; }
+        else if (opt === 'B') { return <svg width="50" height="50" viewBox="0 0 60 60"><path d="M30 10 C 40 10, 50 20, 50 30 C 50 40, 40 50, 30 50" fill="none" stroke="#f59e0b" strokeWidth="2"/><line x1="5" y1="30" x2="55" y2="30" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="2,2"/></svg>; }
+        else if (opt === 'C') { return <svg width="50" height="50" viewBox="0 0 60 60"><circle cx="30" cy="30" r="20" fill="none" stroke="#f59e0b" strokeWidth="2"/><line x1="5" y1="30" x2="55" y2="30" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="2,2"/></svg>; }
+        else { return <svg width="50" height="50" viewBox="0 0 60 60"><path d="M10 10 L50 10 L50 50" fill="none" stroke="#f59e0b" strokeWidth="2"/><line x1="5" y1="30" x2="55" y2="30" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="2,2"/></svg>; }
+
+      case 'lg20':
+        if (opt === 'A') { return <svg width="50" height="50" viewBox="0 0 60 60"><polygon points="30,20 40,35 20,35" fill="none" stroke="#f59e0b" strokeWidth="2"/><polygon points="30,10 45,45 15,45" fill="#f59e0b"/></svg>; }
+        else if (opt === 'B') { return <svg width="50" height="50" viewBox="0 0 60 60"><polygon points="30,10 45,45 15,45" fill="none" stroke="#f59e0b" strokeWidth="2"/><rect x="25" y="25" width="10" height="10" fill="#f59e0b"/></svg>; }
+        else if (opt === 'C') { return <svg width="50" height="50" viewBox="0 0 60 60"><circle cx="30" cy="30" r="15" fill="none" stroke="#f59e0b" strokeWidth="2"/><polygon points="30,20 35,30 25,30" fill="#f59e0b"/></svg>; }
+        else { return <svg width="50" height="50" viewBox="0 0 60 60"><polygon points="30,10 45,45 15,45" fill="none" stroke="#f59e0b" strokeWidth="2"/><polygon points="30,20 40,40 20,40" fill="#f59e0b"/></svg>; }
       default:
         return null;
     }

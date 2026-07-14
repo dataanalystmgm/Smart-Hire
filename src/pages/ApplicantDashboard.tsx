@@ -76,6 +76,15 @@ export default function ApplicantDashboard({ user }: { user: User }) {
               createdAt: app.CreatedAt || app.createdAt
             }));
           setApplications(mappedApps);
+          
+          // Update local storage so that Layout.tsx (which polls localStorage) detects the status change
+          const stored = localStorage.getItem('mgm_applications');
+          let parsedApps = stored ? JSON.parse(stored) : [];
+          // Remove existing apps for this user
+          parsedApps = parsedApps.filter((app: any) => String(app.userId) !== String(user.userId));
+          // Add the newly fetched apps
+          parsedApps = [...parsedApps, ...mappedApps];
+          localStorage.setItem('mgm_applications', JSON.stringify(parsedApps));
         }
       } catch (err) {
         console.warn('Failed to fetch applications from GAS:', err);

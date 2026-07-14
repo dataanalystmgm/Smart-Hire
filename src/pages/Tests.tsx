@@ -10,6 +10,7 @@ export default function Tests({ user }: { user: User }) {
   const [activeTest, setActiveTest] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState('');
+  const [scoreResult, setScoreResult] = useState('');
   const [testList, setTestList] = useState<any[]>([]);
 
   useEffect(() => {
@@ -19,11 +20,13 @@ export default function Tests({ user }: { user: User }) {
   const handleKraepelinComplete = async (score: number) => {
     setLoading(true);
     setResult('');
+    setScoreResult('');
     
     const evaluation = `Kandidat menyelesaikan tes Kraepelin dengan tingkat akurasi ${score}%. ${score > 80 ? 'Hasil sangat baik, menunjukkan ketelitian dan stabilitas kerja yang tinggi di bawah tekanan.' : 'Hasil di bawah rata-rata, menunjukkan potensi kelelahan atau kurang ketelitian.'}`;
 
     try {
       setResult(evaluation);
+      setScoreResult(score.toString());
       
       // Save to localStorage for fallback persistence
       const storedResults = localStorage.getItem('mgm_test_results') ? JSON.parse(localStorage.getItem('mgm_test_results')!) : [];
@@ -33,6 +36,7 @@ export default function Tests({ user }: { user: User }) {
         testType: 'creplin',
         score: score.toString(),
         resume: evaluation,
+        answers: { raw_score: score },
         validated: 'Belum Divalidasi',
         createdAt: new Date().toISOString()
       });
@@ -44,10 +48,12 @@ export default function Tests({ user }: { user: User }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           action: 'save_test', 
+          sheetName: 'Tes_creplin',
           userId: user.userId, 
           testType: 'creplin',
           score: score.toString(),
           resume: evaluation,
+          answers: JSON.stringify({ raw_score: score }),
           validated: 'Belum Divalidasi'
         })
       });
@@ -61,6 +67,7 @@ export default function Tests({ user }: { user: User }) {
   const submitGenericTest = async (testId: string, answers: any) => {
     setLoading(true);
     setResult('');
+    setScoreResult('');
     
     try {
       const res = await fetch('/api/ai/evaluate-test', {
@@ -69,20 +76,26 @@ export default function Tests({ user }: { user: User }) {
         body: JSON.stringify({ testType: testId, answers: answers })
       });
       const data = await res.json();
-      const evaluationText = data.result || 'Test evaluated.';
+      const evaluationText = data.result || data.error || 'Test evaluated.';
+      const score = data.score || 'N/A';
+      const detailAnswersToSave = data.detailed_answers || answers;
       setResult(evaluationText);
+      setScoreResult(score);
       
-      // Save to localStorage for fallback persistence
-      const storedResults = localStorage.getItem('mgm_test_results') ? JSON.parse(localStorage.getItem('mgm_test_results')!) : [];
-      storedResults.push({
+      const payloadToSave = {
         userId: user.userId,
         userName: user.name,
         testType: testId,
-        score: 'N/A',
+        score: score,
         resume: evaluationText,
+        answers: detailAnswersToSave,
         validated: 'Belum Divalidasi',
         createdAt: new Date().toISOString()
-      });
+      };
+      
+      // Save to localStorage for fallback persistence
+      const storedResults = localStorage.getItem('mgm_test_results') ? JSON.parse(localStorage.getItem('mgm_test_results')!) : [];
+      storedResults.push(payloadToSave);
       localStorage.setItem('mgm_test_results', JSON.stringify(storedResults));
 
       // Save result via proxy
@@ -91,9 +104,12 @@ export default function Tests({ user }: { user: User }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           action: 'save_test', 
+          sheetName: `Tes_${testId}`,
           userId: user.userId, 
           testType: testId,
+          score: score,
           resume: evaluationText,
+          answers: JSON.stringify(detailAnswersToSave),
           validated: 'Belum Divalidasi'
         })
       });
@@ -125,7 +141,7 @@ export default function Tests({ user }: { user: User }) {
                 </div>
                 <h3 className="font-bold text-2xl text-mgm-dark mb-4">Tes Selesai</h3>
                 <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 mb-8">
-                  <p className="text-slate-700 leading-relaxed">{result}</p>
+                  <p className="text-slate-700 leading-relaxed font-medium">Terima kasih telah menyelesaikan tes ini. Semoga Anda bisa segera bekerja sama dengan kami.</p>
                 </div>
                 <button 
                   onClick={() => { setActiveTest(null); setResult(''); }}
@@ -146,12 +162,11 @@ export default function Tests({ user }: { user: User }) {
                   <CheckCircle className="w-8 h-8" />
                 </div>
                 <h3 className="font-bold text-2xl text-mgm-dark mb-4">Tes Selesai</h3>
-                <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 mb-8 text-left">
-                  <h4 className="font-bold text-mgm-dark mb-2">Hasil Evaluasi AI:</h4>
-                  <p className="whitespace-pre-wrap text-slate-700 leading-relaxed">{result}</p>
+                <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 mb-8 text-center">
+                  <p className="text-slate-700 leading-relaxed font-medium">Terima kasih telah menyelesaikan tes ini. Semoga Anda bisa segera bekerja sama dengan kami.</p>
                 </div>
                 <button 
-                  onClick={() => { setActiveTest(null); setResult(''); }}
+                  onClick={() => { setActiveTest(null); setResult(''); setScoreResult(''); }}
                   className="bg-mgm-dark text-white px-8 py-3 rounded-xl font-medium hover:bg-opacity-90 transition-colors"
                 >
                   Kembali ke Daftar Tes

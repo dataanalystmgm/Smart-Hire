@@ -68,16 +68,17 @@ function doPost(e) {
 
     if (action === 'applyJob' || action === 'apply') {
       const sheet = SpreadsheetApp.openById(sheetId).getSheetByName('Applications') || SpreadsheetApp.openById(sheetId).insertSheet('Applications');
-      if (sheet.getLastRow() === 0) sheet.appendRow(['ID', 'UserID', 'UserName', 'JobID', 'JobTitle', 'Status', 'CreatedAt']);
+      if (sheet.getLastRow() === 0) sheet.appendRow(['ID', 'UserID', 'UserName', 'JobID', 'JobTitle', 'Status', 'CreatedAt', 'AI Analysis']);
       const appId = Utilities.getUuid();
       sheet.appendRow([appId, data.userId, data.userName || '', data.jobId, data.jobTitle || '', data.status || 'Applied', new Date().toISOString()]);
       return ContentService.createTextOutput(JSON.stringify({ status: 'success', applicationId: appId })).setMimeType(ContentService.MimeType.JSON);
     }
     
     if (action === 'save_test') {
-       const sheet = SpreadsheetApp.openById(sheetId).getSheetByName('TestResults') || SpreadsheetApp.openById(sheetId).insertSheet('TestResults');
-       if (sheet.getLastRow() === 0) sheet.appendRow(['UserID', 'TestType', 'Score', 'Resume', 'Validated', 'CreatedAt']);
-       sheet.appendRow([data.userId, data.testType, data.score || '', data.resume || '', data.validated || 'Belum Divalidasi', new Date().toISOString()]);
+       const targetSheetName = data.sheetName || 'TestResults';
+       const sheet = SpreadsheetApp.openById(sheetId).getSheetByName(targetSheetName) || SpreadsheetApp.openById(sheetId).insertSheet(targetSheetName);
+       if (sheet.getLastRow() === 0) sheet.appendRow(['UserID', 'TestType', 'Score', 'Resume (Interpretasi AI)', 'Detail Jawaban', 'Validated', 'CreatedAt']);
+       sheet.appendRow([data.userId, data.testType, data.score || '', data.resume || '', data.answers || '', data.validated || 'Belum Divalidasi', new Date().toISOString()]);
        return ContentService.createTextOutput(JSON.stringify({ status: 'success' })).setMimeType(ContentService.MimeType.JSON);
     }
     
@@ -114,6 +115,38 @@ function doPost(e) {
        return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Job ID not found' })).setMimeType(ContentService.MimeType.JSON);
     }
 
+    if (action === 'update_application_cv_analysis') {
+       const sheet = SpreadsheetApp.openById(sheetId).getSheetByName('Applications');
+       if (!sheet) return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Applications sheet not found' })).setMimeType(ContentService.MimeType.JSON);
+       
+       const header = sheet.getRange(1, 8).getValue();
+       if (!header) sheet.getRange(1, 8).setValue('AI Analysis');
+
+       const values = sheet.getDataRange().getValues();
+       for (let i = 1; i < values.length; i++) {
+         if (String(values[i][0]) === String(data.applicationId)) {
+           sheet.getRange(i + 1, 8).setValue(data.aiAnalysis); // Kolom H (8th column)
+           return ContentService.createTextOutput(JSON.stringify({ status: 'success' })).setMimeType(ContentService.MimeType.JSON);
+         }
+       }
+       return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Application not found' })).setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    if (action === 'get_file_base64') {
+       try {
+         const fileIdMatch = data.fileUrl.match(/[-\w]{25,}/);
+         if (fileIdMatch) {
+           const file = DriveApp.getFileById(fileIdMatch[0]);
+           const base64 = Utilities.base64Encode(file.getBlob().getBytes());
+           const mimeType = file.getMimeType();
+           return ContentService.createTextOutput(JSON.stringify({ status: 'success', base64: base64, mimeType: mimeType })).setMimeType(ContentService.MimeType.JSON);
+         }
+         return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'File ID not found in URL' })).setMimeType(ContentService.MimeType.JSON);
+       } catch (e) {
+         return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: e.toString() })).setMimeType(ContentService.MimeType.JSON);
+       }
+    }
+
     if (action === 'update_application_status') {
        const sheet = SpreadsheetApp.openById(sheetId).getSheetByName('Applications');
        if (!sheet) return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Applications sheet not found' })).setMimeType(ContentService.MimeType.JSON);
@@ -125,6 +158,34 @@ function doPost(e) {
          }
        }
        return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Application ID not found' })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    if (action === 'update_test_evaluation') {
+       const sheet = SpreadsheetApp.openById(sheetId).getSheetByName('TestResults');
+       if (!sheet) return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'TestResults sheet not found' })).setMimeType(ContentService.MimeType.JSON);
+       
+       const values = sheet.getDataRange().getValues();
+       for (let i = values.length - 1; i >= 1; i--) {
+         if (values[i][0] === data.userId && values[i][1] === data.testType) {
+           sheet.getRange(i + 1, 4).setValue(data.resume); // Resume is 4th column
+           return ContentService.createTextOutput(JSON.stringify({ status: 'success' })).setMimeType(ContentService.MimeType.JSON);
+         }
+       }
+       return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Test result not found' })).setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    if (action === 'update_interview_summary') {
+       const sheet = SpreadsheetApp.openById(sheetId).getSheetByName('Interviews');
+       if (!sheet) return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Interviews sheet not found' })).setMimeType(ContentService.MimeType.JSON);
+       
+       const values = sheet.getDataRange().getValues();
+       for (let i = values.length - 1; i >= 1; i--) {
+         if (values[i][0] === data.userId) {
+           sheet.getRange(i + 1, 3).setValue(data.aiSummary); // 'Summary by AI' is 3rd column
+           return ContentService.createTextOutput(JSON.stringify({ status: 'success' })).setMimeType(ContentService.MimeType.JSON);
+         }
+       }
+       return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Interview result not found' })).setMimeType(ContentService.MimeType.JSON);
     }
 
     if (action === 'validate_test') {

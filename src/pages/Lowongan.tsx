@@ -184,7 +184,7 @@ export default function Lowongan() {
           </span>
           <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight">Cari Lowongan Pekerjaan</h1>
           <p className="text-white/80 max-w-2xl font-light text-sm md:text-base leading-relaxed">
-            Temukan berbagai peluang karir menarik di MGM Bosco Logistics. Gunakan fitur filter cerdas untuk menemukan posisi yang sesuai dengan keahlian Anda.
+            Temukan berbagai peluang karir menarik di MGM. Gunakan fitur filter cerdas untuk menemukan posisi yang sesuai dengan keahlian Anda.
           </p>
         </div>
       </div>
@@ -369,71 +369,6 @@ export default function Lowongan() {
                   </ul>
                 </div>
 
-                <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200">
-                  <h4 className="font-bold text-mgm-dark mb-2 flex items-center">
-                    <Brain className="w-5 h-5 mr-2 text-mgm-green" />
-                    Pencocokan CV Cerdas (AI Screening)
-                  </h4>
-                  <p className="text-xs text-slate-500 mb-4">
-                    Unggah dokumen CV atau resume Anda (format .txt atau pdf teks) untuk melihat seberapa cocok Anda dengan kriteria posisi ini.
-                  </p>
-                  
-                  {!matchResult ? (
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-center w-full">
-                        <label className={`flex flex-col items-center justify-center w-full h-32 border-2 border-slate-300 border-dashed rounded-xl ${isMatching ? 'bg-slate-100 cursor-not-allowed' : 'cursor-pointer bg-white hover:bg-slate-50'}`}>
-                          <div className="flex flex-col items-center justify-center pt-5 pb-6 text-slate-500">
-                            {isMatching ? (
-                              <Loader2 className="w-8 h-8 mb-3 animate-spin text-mgm-green" />
-                            ) : (
-                              <Upload className="w-8 h-8 mb-3" />
-                            )}
-                            <p className="mb-2 text-sm">
-                              {isMatching ? "Sedang Menganalisis..." : <><span className="font-semibold">Klik untuk mengunggah</span> atau seret dan lepas</>}
-                            </p>
-                            {!isMatching && <p className="text-xs text-slate-400">TXT, MD, CSV</p>}
-                          </div>
-                          <input type="file" className="hidden" accept=".txt,.md,.csv" onChange={handleFileUpload} disabled={isMatching} />
-                        </label>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <div className="bg-white p-6 rounded-xl border border-slate-200">
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="flex items-center text-mgm-dark font-bold text-sm">
-                            <CheckCircle className="w-5 h-5 text-mgm-green mr-2" />
-                            Hasil Analisis
-                          </div>
-                          <div className={`px-4 py-1.5 rounded-full font-bold text-sm ${parseInt(matchResult.score) < 60 ? 'bg-amber-100 text-amber-700' : 'bg-mgm-dark text-white'}`}>
-                            Skor: {matchResult.score}/100
-                          </div>
-                        </div>
-                        <p className="text-slate-600 text-xs leading-relaxed mb-4 whitespace-pre-wrap">
-                          {matchResult.summary}
-                        </p>
-                        <button 
-                          onClick={() => setMatchResult(null)}
-                          className="text-xs font-bold text-mgm-green hover:underline"
-                        >
-                          Cek Ulang dengan CV Lain
-                        </button>
-                      </div>
-                      
-                      {parseInt(matchResult.score) < 60 && (
-                        <div className="flex items-start text-xs text-amber-800 bg-amber-50 p-4 rounded-xl border border-amber-200">
-                          <AlertTriangle className="w-5 h-5 text-amber-600 mr-3 shrink-0 mt-0.5" />
-                          <p><strong>Peringatan:</strong> Skor kecocokan CV Anda cukup rendah untuk posisi ini. Anda tetap dapat melanjutkan melamar, namun kami menyarankan untuk memperbarui CV Anda atau mencari posisi yang lebih sesuai dengan pengalaman Anda.</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-                
-                <div className="mt-8 flex items-start text-xs text-slate-500 bg-blue-50/50 p-4 rounded-xl border border-blue-100">
-                  <Info className="w-5 h-5 text-blue-500 mr-3 shrink-0 mt-0.5" />
-                  <p>Meskipun skor kecocokan rendah, Anda tetap diperbolehkan untuk melamar posisi ini. Kami mempertimbangkan potensi secara keseluruhan.</p>
-                </div>
               </div>
 
               <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end space-x-4">

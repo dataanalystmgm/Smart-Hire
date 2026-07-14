@@ -28,11 +28,11 @@ export default function Layout({ children, user, setUser }: { children: React.Re
         if (storedApps) {
           try {
             const parsedApps = JSON.parse(storedApps);
-            const userApps = parsedApps.filter((app: any) => app.userId === user.userId);
-            const approved = userApps.some((app: any) => 
-              app.status?.toLowerCase() === 'approved' || 
-              app.status?.toLowerCase() === 'disetujui'
-            );
+            const userApps = parsedApps.filter((app: any) => String(app.userId) === String(user.userId));
+            const approved = userApps.some((app: any) => {
+              const status = app.status?.toLowerCase();
+              return status === 'approved' || status === 'disetujui' || status === 'testing' || status === 'interview';
+            });
             setIsApproved(approved);
           } catch (e) {
             console.error(e);

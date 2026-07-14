@@ -244,6 +244,12 @@ export default function Interview({ user }: { user: User }) {
 
   // Speech synthesis & speech recognition initialization
   useEffect(() => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.getVoices();
+      };
+      window.speechSynthesis.getVoices();
+    }
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (SpeechRecognition) {
       recognitionRef.current = new SpeechRecognition();
@@ -306,6 +312,12 @@ export default function Interview({ user }: { user: User }) {
       const cleanText = text.replace(/[*#_`~]/g, '');
       const utterance = new SpeechSynthesisUtterance(cleanText);
       utterance.lang = 'id-ID';
+      
+      const voices = window.speechSynthesis.getVoices();
+      const idVoice = voices.find(v => v.lang === 'id-ID' || v.lang === 'id_ID');
+      if (idVoice) {
+        utterance.voice = idVoice;
+      }
       
       utterance.onstart = () => {
         if (isListening && recognitionRef.current) {
@@ -551,24 +563,13 @@ export default function Interview({ user }: { user: User }) {
             </svg>
           </div>
           <h1 className="text-3xl font-bold text-mgm-dark tracking-tight">Wawancara AI Selesai</h1>
-          <p className="text-slate-500 max-w-xl mx-auto">
-            Selamat, Anda telah menyelesaikan seluruh rangkaian pertanyaan wawancara untuk posisi <span className="font-bold text-mgm-green">{jobTitle}</span>. Rangkuman wawancara dan ulasan "Summary by AI" telah sukses tersimpan di Google Sheet.
+          <p className="text-slate-500 max-w-xl mx-auto font-medium">
+            Terima kasih telah menyelesaikan wawancara ini. Semoga Anda bisa segera bekerja sama dengan kami.
           </p>
         </div>
 
-        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 md:p-8 space-y-6">
-          <div className="flex items-center space-x-3 border-b border-slate-200 pb-4">
-            <Bot className="w-6 h-6 text-mgm-green" />
-            <h2 className="text-lg font-bold text-mgm-dark">Summary by AI (Ulasan Otomatis HR)</h2>
-          </div>
-          
-          <div className="whitespace-pre-wrap text-slate-700 text-sm leading-relaxed max-h-[400px] overflow-y-auto pr-2 custom-scrollbar font-medium">
-            {finalSummary || "Sedang memproses rangkuman evaluasi AI..."}
-          </div>
-        </div>
-
         <div className="flex justify-center pt-2">
-          <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">MGM SmartHire • Sesi Wawancara Dikunci</p>
+          <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">MGM SmartHire • Sesi Wawancara Selesai</p>
         </div>
       </div>
     );
