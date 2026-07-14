@@ -9,7 +9,7 @@ const PORT = 3000;
 app.use(express.json({ limit: "50mb" }));
 
 // Helper to get Google Apps Script URL
-const getGasUrl = () => process.env.VITE_GAS_WEB_APP_URL || process.env.GAS_WEB_APP_URL;
+const getGasUrl = () => "https://script.google.com/macros/s/AKfycbxxQ9HDOmYQ7ThrqP-8gOpLfPnU3B0W18jAci-lTVWFCYA_WmDV4KIuEcAtcjIN2kPqiQ/exec";
 
 // Set up Gemini AI
 let ai: GoogleGenAI | null = null;
