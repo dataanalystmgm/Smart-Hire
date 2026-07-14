@@ -1,7 +1,6 @@
 import express from "express";
 import path from "path";
 import multer from "multer";
-import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import axios from "axios";
 
@@ -350,13 +349,21 @@ const generateWithFallback = async (prompt) => {
 // -------------------------------------------------------------
 // Vite Middleware & Static Serving
 // -------------------------------------------------------------
+export default app;
+
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({
+    let createViteServer;
+    try {
+      createViteServer = (await import("vite")).createServer;
+    } catch (e) {}
+    if (createViteServer) {
+      const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
     });
     app.use(vite.middlewares);
+    }
   } else {
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
@@ -370,4 +377,6 @@ async function startServer() {
   });
 }
 
-startServer();
+if (!process.env.VERCEL) {
+  startServer();
+}
