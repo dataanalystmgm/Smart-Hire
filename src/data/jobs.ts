@@ -33,7 +33,7 @@ export const INITIAL_JOBS: Job[] = [
 // Helper to load jobs with fallback
 export async function getJobs(): Promise<Job[]> {
   try {
-    const res = await fetch('/api/gas/proxy', {
+    const res = await fetch('https://script.google.com/macros/s/AKfycbxxQ9HDOmYQ7ThrqP-8gOpLfPnU3B0W18jAci-lTVWFCYA_WmDV4KIuEcAtcjIN2kPqiQ/exec', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'get_data', type: 'Jobs' })
@@ -91,7 +91,7 @@ export async function addJob(job: Job): Promise<boolean> {
 
   // 2. Sync to GAS Google Sheets
   try {
-    const response = await fetch('/api/gas/proxy', {
+    const response = await fetch('https://script.google.com/macros/s/AKfycbxxQ9HDOmYQ7ThrqP-8gOpLfPnU3B0W18jAci-lTVWFCYA_WmDV4KIuEcAtcjIN2kPqiQ/exec', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -121,7 +121,7 @@ export async function updateJob(job: Job): Promise<boolean> {
 
   // 2. Sync to GAS Google Sheets
   try {
-    const response = await fetch('/api/gas/proxy', {
+    const response = await fetch('https://script.google.com/macros/s/AKfycbxxQ9HDOmYQ7ThrqP-8gOpLfPnU3B0W18jAci-lTVWFCYA_WmDV4KIuEcAtcjIN2kPqiQ/exec', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
