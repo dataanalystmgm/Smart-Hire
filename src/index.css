@@ -2,15 +2,77 @@
 
 @theme {
   --color-mgm-dark: #315f66;
-  --color-mgm-green: #7eb578;
+  --color-mgm-green: #FF005C;
   --color-mgm-olive: #dedc8a;
   --color-mgm-yellow: #f5fcaa;
   --color-mgm-light: #f8fbfb;
+  --font-sans: 'Plus Jakarta Sans', sans-serif;
+  --font-google: 'Outfit', sans-serif;
 }
 
 body {
   background-color: var(--color-mgm-light);
   color: var(--color-mgm-dark);
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+html.dark body {
+  background-color: #0c1618;
+  color: #f1f5f9;
+}
+
+/* Dark mode card & container polish */
+html.dark .bg-slate-50 {
+  background-color: #0f1e22 !important;
+}
+
+html.dark .bg-white {
+  background-color: #14262a !important;
+  color: #f8fafc;
+}
+
+html.dark .border-slate-200,
+html.dark .border-slate-100 {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+html.dark .text-slate-900,
+html.dark .text-slate-800 {
+  color: #f8fafc !important;
+}
+
+html.dark .text-slate-700,
+html.dark .text-slate-600 {
+  color: #cbd5e1 !important;
+}
+
+html.dark .text-slate-500,
+html.dark .text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+html.dark .text-mgm-dark {
+  color: #f5fcaa !important;
+}
+
+html.dark .bg-mgm-light {
+  background-color: #182e33 !important;
+  color: #f8fafc !important;
+}
+
+html.dark header {
+  background-color: #112327 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+html.dark input,
+html.dark select,
+html.dark textarea {
+  color: #f8fafc !important;
+}
+
+html.dark .bg-slate-100 {
+  background-color: #1a3036 !important;
 }
 
 @keyframes marquee {

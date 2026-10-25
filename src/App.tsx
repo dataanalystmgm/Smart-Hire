@@ -13,8 +13,13 @@ import ApplicantDashboard from './pages/ApplicantDashboard';
 import Tests from './pages/Tests';
 import Interview from './pages/Interview';
 import AdminDashboard from './pages/AdminDashboard';
+import About from './pages/About';
+import Companies from './pages/Companies';
+import SalaryGuide from './pages/SalaryGuide';
+import SavedJobs from './pages/SavedJobs';
 import { useState, useEffect } from 'react';
 import { User } from './types';
+import { ThemeLanguageProvider } from './context/ThemeLanguageContext';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -25,11 +30,16 @@ export default function App() {
   }, []);
 
   return (
-    <Router>
-      <Layout user={user} setUser={setUser}>
+    <ThemeLanguageProvider>
+      <Router>
+        <Layout user={user} setUser={setUser}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/lowongan" element={<Lowongan />} />
+          <Route path="/perusahaan" element={<Companies />} />
+          <Route path="/panduan-gaji" element={<Navigate to="/lowongan" replace />} />
+          <Route path="/tentang-kami" element={<About />} />
+          <Route path="/tersimpan" element={user ? <SavedJobs user={user} /> : <Navigate to="/login?redirect=tersimpan" />} />
           <Route path="/login" element={<Login setUser={setUser} />} />
           <Route path="/register" element={<Register setUser={setUser} />} />
           <Route path="/dashboard" element={user ? <ApplicantDashboard user={user} /> : <Navigate to="/login" />} />
@@ -39,5 +49,6 @@ export default function App() {
         </Routes>
       </Layout>
     </Router>
+  </ThemeLanguageProvider>
   );
 }

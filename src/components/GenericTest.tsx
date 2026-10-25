@@ -153,7 +153,7 @@ export default function GenericTest({ test, onComplete }: { test: TestData, onCo
 
             {q.type === 'visual_pattern' && (
               <VisualLogicQuestion 
-                questionId={q.id}
+                question={q}
                 selectedOption={answers[q.id] || ''}
                 onChange={(val) => handleAnswer(q.id, val)}
               />

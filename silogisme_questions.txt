@@ -1,0 +1,180 @@
+sl1 Semua manusia bisa mati. Socrates adalah manusia. Kesimpulan? [
+  'Socrates bisa mati',
+  'Socrates bukan manusia',
+  'Socrates tidak bisa mati',
+  'Semua yang bisa mati adalah Socrates'
+]
+sl2 Semua karyawan MGM memakai seragam. Budi adalah karyawan MGM. Kesimpulan? [
+  'Budi memakai seragam',
+  'Budi tidak memakai seragam',
+  'Semua yang memakai seragam adalah Budi',
+  'Budi mungkin memakai seragam'
+]
+sl3 Jika hujan turun, maka jalanan basah. Jalanan tidak basah. Kesimpulan? [
+  'Hujan tidak turun',
+  'Hujan turun',
+  'Jalanan kering',
+  'Bisa jadi hujan turun'
+]
+sl4 Beberapa mahasiswa suka membaca. Semua yang suka membaca pintar. Kesimpulan? [
+  'Beberapa mahasiswa pintar',
+  'Semua mahasiswa pintar',
+  'Tidak ada mahasiswa pintar',
+  'Semua yang pintar adalah mahasiswa'
+]
+sl5 Semua burung memiliki sayap. Tidak ada anjing yang memiliki sayap. Kesimpulan? [
+  'Anjing bukan burung',
+  'Burung bukan anjing',
+  'Keduanya benar',
+  'Tidak ada kesimpulan'
+]
+sl6 Sebagian pelamar kerja lulus tes. Semua yang lulus tes dipanggil wawancara. Kesimpulan? [
+  'Sebagian pelamar kerja dipanggil wawancara',
+  'Semua pelamar kerja dipanggil wawancara',
+  'Semua yang dipanggil wawancara adalah pelamar kerja',
+  'Tidak ada pelamar kerja yang dipanggil wawancara'
+]
+sl7 Semua siswa rajin belajar. Sebagian siswa mendapat nilai bagus. Kesimpulan? [
+  'Sebagian yang mendapat nilai bagus rajin belajar',
+  'Semua yang mendapat nilai bagus rajin belajar',
+  'Sebagian siswa tidak rajin belajar',
+  'Semua siswa mendapat nilai bagus'
+]
+sl8 Barang A lebih mahal dari Barang B. Barang C lebih murah dari Barang B. Kesimpulan? [
+  'Barang C paling murah',
+  'Barang A lebih murah dari Barang C',
+  'Barang B paling murah',
+  'Tidak ada yang benar'
+]
+sl9 Jika Amir lulus ujian, dia akan dibelikan sepeda. Amir tidak dibelikan sepeda. Kesimpulan? [
+  'Amir tidak lulus ujian',
+  'Amir lulus ujian',
+  'Amir tidak suka sepeda',
+  'Tidak dapat disimpulkan'
+]
+sl10 Semua kucing mengeong. Sebagian hewan yang mengeong bulunya putih. Kesimpulan? [
+  'Sebagian kucing bulunya putih',
+  'Semua kucing bulunya putih',
+  'Tidak dapat disimpulkan',
+  'Semua hewan putih mengeong'
+]
+sl11 Sebagian A adalah B. Semua B adalah C. Kesimpulan? [
+  'Sebagian A adalah C',
+  'Semua A adalah C',
+  'Semua C adalah A',
+  'Sebagian C adalah B'
+]
+sl12 Semua dokter ahli kesehatan. Sebagian dokter bekerja di rumah sakit. Kesimpulan? [
+  'Sebagian ahli kesehatan bekerja di rumah sakit',
+  'Semua ahli kesehatan bekerja di rumah sakit',
+  'Semua yang bekerja di rumah sakit adalah dokter',
+  'Sebagian yang bekerja di rumah sakit bukan ahli kesehatan'
+]
+sl13 Tidak ada mahasiswa yang pemalas. Semua pemuda adalah mahasiswa. Kesimpulan? [
+  'Tidak ada pemuda yang pemalas',
+  'Sebagian pemuda pemalas',
+  'Semua mahasiswa adalah pemuda',
+  'Sebagian mahasiswa pemuda'
+]
+sl14 Jika saya belajar, saya akan pintar. Jika saya pintar, saya lulus ujian. Kesimpulan? [
+  'Jika saya belajar, saya lulus ujian',
+  'Saya pasti lulus ujian',
+  'Jika saya lulus ujian, saya pasti belajar',
+  'Saya belajar dan lulus ujian'
+]
+sl15 Semua ikan bernapas dengan insang. Paus bernapas dengan paru-paru. Kesimpulan? [
+  'Paus bukan ikan',
+  'Paus adalah ikan',
+  'Paus bisa bernapas dengan insang',
+  'Tidak dapat disimpulkan'
+]
+sl16 Sebagian karyawan datang terlambat. Semua yang datang terlambat akan ditegur. Kesimpulan? [
+  'Sebagian karyawan akan ditegur',
+  'Semua karyawan akan ditegur',
+  'Semua yang ditegur adalah karyawan',
+  'Sebagian yang ditegur bukan karyawan'
+]
+sl17 Semua mobil membutuhkan bahan bakar. Sebagian kendaraan bermotor adalah mobil. Kesimpulan? [
+  'Sebagian kendaraan bermotor membutuhkan bahan bakar',
+  'Semua kendaraan bermotor membutuhkan bahan bakar',
+  'Semua yang membutuhkan bahan bakar adalah mobil',
+  'Sebagian mobil tidak membutuhkan bahan bakar'
+]
+sl18 Semua tanaman hijau membutuhkan cahaya matahari. Jamur tidak membutuhkan cahaya matahari. Kesimpulan? [
+  'Jamur bukan tanaman hijau',
+  'Jamur adalah tanaman hijau',
+  'Sebagian jamur membutuhkan cahaya',
+  'Tidak dapat disimpulkan'
+]
+sl19 Jika listrik padam, maka lampu mati. Lampu mati. Kesimpulan? [
+  'Tidak dapat disimpulkan (bisa karena sebab lain)',
+  'Listrik pasti padam',
+  'Lampu rusak',
+  'Listrik menyala'
+]
+sl20 Semua politisi pintar bicara. Sebagian orang yang pintar bicara adalah pengacara. Kesimpulan? [
+  'Tidak dapat disimpulkan',
+  'Sebagian politisi adalah pengacara',
+  'Semua pengacara adalah politisi',
+  'Sebagian pengacara adalah politisi'
+]
+sl21 Sebagian pelaut suka berenang. Semua yang suka berenang memiliki fisik kuat. Kesimpulan? [
+  'Sebagian pelaut memiliki fisik kuat',
+  'Semua pelaut memiliki fisik kuat',
+  'Semua yang memiliki fisik kuat adalah pelaut',
+  'Sebagian yang memiliki fisik kuat bukan pelaut'
+]
+sl22 Semua bintang bersinar di malam hari. Matahari bersinar di siang hari. Kesimpulan? [
+  'Matahari mungkin bukan bintang dalam konteks kalimat pertama',
+  'Matahari adalah bintang',
+  'Matahari bersinar di malam hari',
+  'Semua bintang bersinar di siang hari'
+]
+sl23 Jika Budi makan nasi, dia kenyang. Budi makan nasi. Kesimpulan? [
+  'Budi kenyang',
+  'Budi lapar',
+  'Budi tidak kenyang',
+  'Budi makan roti'
+]
+sl24 Sebagian guru matematika sabar. Semua orang sabar disukai siswa. Kesimpulan? [
+  'Sebagian guru matematika disukai siswa',
+  'Semua guru matematika disukai siswa',
+  'Semua yang disukai siswa adalah guru matematika',
+  'Tidak dapat disimpulkan'
+]
+sl25 Semua anak kecil suka bermain. Budi bukan anak kecil. Kesimpulan? [
+  'Tidak dapat disimpulkan',
+  'Budi tidak suka bermain',
+  'Budi suka bermain',
+  'Budi suka diam'
+]
+sl26 Semua mamalia menyusui anaknya. Kelelawar menyusui anaknya. Kesimpulan? [
+  'Kelelawar adalah mamalia',
+  'Kelelawar bukan mamalia',
+  'Kelelawar bisa terbang',
+  'Kelelawar adalah burung'
+]
+sl27 Tidak ada polisi yang takut gelap. Sebagian pria takut gelap. Kesimpulan? [
+  'Sebagian pria bukan polisi',
+  'Semua pria bukan polisi',
+  'Semua polisi adalah pria',
+  'Sebagian pria adalah polisi'
+]
+sl28 Semua X adalah Y. Tidak ada Y yang Z. Kesimpulan? [
+  'Tidak ada X yang Z',
+  'Sebagian X adalah Z',
+  'Semua X adalah Z',
+  'Sebagian Z adalah Y'
+]
+sl29 Jika alarm berbunyi, ada bahaya. Tidak ada bahaya. Kesimpulan? [
+  'Alarm tidak berbunyi',
+  'Alarm rusak',
+  'Alarm berbunyi',
+  'Bahaya belum datang'
+]
+sl30 Semua pohon berdaun rindang menghasilkan buah. Sebagian pohon mangga tidak menghasilkan buah. Kesimpulan? [
+  'Sebagian pohon mangga daunnya tidak rindang',
+  'Semua pohon mangga daunnya rindang',
+  'Semua pohon mangga menghasilkan buah',
+  'Pohon mangga bukan pohon'
+]

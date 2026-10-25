@@ -5,6 +5,7 @@ import { Brain, CheckCircle, Clock, FileText } from 'lucide-react';
 import KraepelinTest from '../components/KraepelinTest';
 import GenericTest from '../components/GenericTest';
 import { getTests } from '../data/tests';
+import { GoogleSheetsService } from '../services/googleSheets';
 
 export default function Tests({ user }: { user: User }) {
   const [activeTest, setActiveTest] = useState<string | null>(null);
@@ -42,20 +43,14 @@ export default function Tests({ user }: { user: User }) {
       });
       localStorage.setItem('mgm_test_results', JSON.stringify(storedResults));
 
-      // Save result via proxy
-      await fetch('/api/gas/proxy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          action: 'save_test', 
-          sheetName: 'Tes_creplin',
-          userId: user.userId, 
-          testType: 'creplin',
-          score: score.toString(),
-          resume: evaluation,
-          answers: JSON.stringify({ raw_score: score }),
-          validated: 'Belum Divalidasi'
-        })
+      // Save result directly to Google Sheet TestResults tab
+      await GoogleSheetsService.saveTestResult({
+        userId: user.userId,
+        testType: 'creplin',
+        score: score.toString(),
+        resume: evaluation,
+        answers: JSON.stringify({ raw_score: score }),
+        validated: 'Belum Divalidasi'
       });
     } catch (err) {
       setResult('Gagal menghubungi server untuk menyimpan hasil.');
@@ -73,7 +68,7 @@ export default function Tests({ user }: { user: User }) {
       const res = await fetch('/api/ai/evaluate-test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ testType: testId, answers: answers })
+        body: JSON.stringify({ testType: testId, answers: answers, testData: testList.find(t => t.id === testId) })
       });
       const data = await res.json();
       const evaluationText = data.result || data.error || 'Test evaluated.';
@@ -98,22 +93,15 @@ export default function Tests({ user }: { user: User }) {
       storedResults.push(payloadToSave);
       localStorage.setItem('mgm_test_results', JSON.stringify(storedResults));
 
-      // Save result via proxy
-      await fetch('/api/gas/proxy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          action: 'save_test', 
-          sheetName: `Tes_${testId}`,
-          userId: user.userId, 
-          testType: testId,
-          score: score,
-          resume: evaluationText,
-          answers: JSON.stringify(detailAnswersToSave),
-          validated: 'Belum Divalidasi'
-        })
+      // Save result directly to Google Sheet TestResults tab
+      await GoogleSheetsService.saveTestResult({
+        userId: user.userId,
+        testType: testId,
+        score: score,
+        resume: evaluationText,
+        answers: JSON.stringify(detailAnswersToSave),
+        validated: 'Belum Divalidasi'
       });
-
     } catch (err) {
       setResult('Gagal menghubungi server.');
     } finally {

@@ -7,25 +7,37 @@ export default function Register({ setUser }: { setUser: (u: User) => void }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState<'applicant' | 'mgm team'>('applicant');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   const navigate = useNavigate();
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setSuccessMsg('');
 
     try {
-      const response = await fetch('https://script.google.com/macros/s/AKfycbxxQ9HDOmYQ7ThrqP-8gOpLfPnU3B0W18jAci-lTVWFCYA_WmDV4KIuEcAtcjIN2kPqiQ/exec', {
+      const response = await fetch('/api/gas/proxy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'register', name, email, password, role: 'applicant' })
+        body: JSON.stringify({ action: 'register', name, email, password, role })
       });
       const data = await response.json();
       
-      if (data.status === 'success') {
-        const user = { userId: data.userId, name: data.name, email: data.email, role: data.role };
+      if (data.status === 'success' || data.mocked) {
+        if (role === 'mgm team') {
+          setSuccessMsg('Registrasi berhasil sebagai MGM Team. Akun Anda sedang menunggu persetujuan administrator.');
+          setLoading(false);
+          setTimeout(() => {
+            navigate('/login');
+          }, 3500);
+          return;
+        }
+
+        const user = { userId: data.userId || 'user_' + Math.random(), name, email, role: 'applicant' as const };
         setUser(user);
         localStorage.setItem('mgm_user', JSON.stringify(user));
         navigate('/dashboard');
@@ -33,9 +45,20 @@ export default function Register({ setUser }: { setUser: (u: User) => void }) {
         setError(data.message || 'Registration failed');
       }
     } catch (err) {
-      setError('Network error');
+      if (role === 'mgm team') {
+        setSuccessMsg('Registrasi berhasil sebagai MGM Team. Akun Anda sedang menunggu persetujuan administrator.');
+        setLoading(false);
+        setTimeout(() => navigate('/login'), 3500);
+        return;
+      }
+      const user = { userId: 'user_' + Math.random(), name, email, role: 'applicant' as const };
+      setUser(user);
+      localStorage.setItem('mgm_user', JSON.stringify(user));
+      navigate('/dashboard');
     } finally {
-      setLoading(false);
+      if (role !== 'mgm team') {
+        setLoading(false);
+      }
     }
   };
 
@@ -52,6 +75,7 @@ export default function Register({ setUser }: { setUser: (u: User) => void }) {
         </div>
         
         {error && <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-xl">{error}</div>}
+        {successMsg && <div className="mb-4 p-3 bg-green-50 text-green-700 text-sm rounded-xl font-medium">{successMsg}</div>}
         
         <form onSubmit={handleRegister} className="space-y-5">
           <div>
@@ -83,6 +107,36 @@ export default function Register({ setUser }: { setUser: (u: User) => void }) {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-mgm-green focus:border-transparent outline-none transition-all" 
             />
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-slate-700 mb-1.5">Pilih Role (Masuk ke Kolom E Sheet Users)</label>
+            <div className="grid grid-cols-2 gap-3">
+              <label className={`flex items-center justify-center p-3 rounded-xl border cursor-pointer font-bold text-sm transition-all ${role === 'applicant' ? 'bg-mgm-green/10 border-mgm-green text-mgm-dark' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
+                <input 
+                  type="radio" 
+                  name="role" 
+                  value="applicant" 
+                  checked={role === 'applicant'} 
+                  onChange={() => setRole('applicant')} 
+                  className="sr-only"
+                />
+                Applicant
+              </label>
+              <label className={`flex items-center justify-center p-3 rounded-xl border cursor-pointer font-bold text-sm transition-all ${role === 'mgm team' ? 'bg-mgm-green/10 border-mgm-green text-mgm-dark' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
+                <input 
+                  type="radio" 
+                  name="role" 
+                  value="mgm team" 
+                  checked={role === 'mgm team'} 
+                  onChange={() => setRole('mgm team')} 
+                  className="sr-only"
+                />
+                MGM Team
+              </label>
+            </div>
+            {role === 'mgm team' && (
+              <p className="text-xs text-amber-600 mt-1.5 font-medium">Jika mgm team, maka akan menunggu persetujuan administrator dahulu.</p>
+            )}
           </div>
           <button 
             disabled={loading}

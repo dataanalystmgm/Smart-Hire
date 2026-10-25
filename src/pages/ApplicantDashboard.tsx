@@ -59,35 +59,66 @@ export default function ApplicantDashboard({ user }: { user: User }) {
     // Fetch Applications from Sheet
     const fetchApplications = async () => {
       try {
-        const res = await fetch('https://script.google.com/macros/s/AKfycbxxQ9HDOmYQ7ThrqP-8gOpLfPnU3B0W18jAci-lTVWFCYA_WmDV4KIuEcAtcjIN2kPqiQ/exec', {
+        const res = await fetch('/api/gas/proxy', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'get_data', type: 'Applications' })
         });
         const d = await res.json();
+        const stored = localStorage.getItem('mgm_applications');
+        let localApps = stored ? JSON.parse(stored) : [];
+        const storedStages = localStorage.getItem('mgm_candidate_stages');
+        const stageOverrides = storedStages ? JSON.parse(storedStages) : {};
+
         if (d.status === 'success' && d.data) {
           const mappedApps: Application[] = d.data
             .filter((app: any) => String(app.UserID || app.userId || '') === String(user.userId))
-            .map((app: any) => ({
-              id: app.ID || app.id,
-              userId: app.UserID || app.userId,
-              jobId: app.JobID || app.jobId,
-              status: app.Status || app.status,
-              createdAt: app.CreatedAt || app.createdAt
-            }));
+            .map((app: any) => {
+              const appId = app.ID || app.id;
+              const localMatch = localApps.find((la: any) => String(la.id) === String(appId));
+              return {
+                id: appId,
+                userId: app.UserID || app.userId,
+                jobId: app.JobID || app.jobId,
+                status: localMatch?.status || stageOverrides[user.userId] || app.Status || app.status,
+                createdAt: app.CreatedAt || app.createdAt
+              };
+            });
+
+          // Include any local-only applications for this user
+          localApps
+            .filter((la: any) => String(la.userId) === String(user.userId))
+            .forEach((la: any) => {
+              if (!mappedApps.some(ma => String(ma.id) === String(la.id))) {
+                mappedApps.push({
+                  ...la,
+                  status: stageOverrides[user.userId] || la.status
+                });
+              }
+            });
+
           setApplications(mappedApps);
           
           // Update local storage so that Layout.tsx (which polls localStorage) detects the status change
-          const stored = localStorage.getItem('mgm_applications');
-          let parsedApps = stored ? JSON.parse(stored) : [];
-          // Remove existing apps for this user
-          parsedApps = parsedApps.filter((app: any) => String(app.userId) !== String(user.userId));
-          // Add the newly fetched apps
+          let parsedApps = localApps.filter((app: any) => String(app.userId) !== String(user.userId));
           parsedApps = [...parsedApps, ...mappedApps];
           localStorage.setItem('mgm_applications', JSON.stringify(parsedApps));
+        } else {
+          const userLocalApps = localApps
+            .filter((la: any) => String(la.userId) === String(user.userId))
+            .map((la: any) => ({
+              ...la,
+              status: stageOverrides[user.userId] || la.status
+            }));
+          setApplications(userLocalApps);
         }
       } catch (err) {
         console.warn('Failed to fetch applications from GAS:', err);
+        const stored = localStorage.getItem('mgm_applications');
+        if (stored) {
+          const localApps = JSON.parse(stored).filter((la: any) => String(la.userId) === String(user.userId));
+          setApplications(localApps);
+        }
       }
     };
     fetchApplications();
@@ -95,7 +126,7 @@ export default function ApplicantDashboard({ user }: { user: User }) {
     // Fetch Documents from Sheet
     const fetchDocuments = async () => {
       try {
-        const res = await fetch('https://script.google.com/macros/s/AKfycbxxQ9HDOmYQ7ThrqP-8gOpLfPnU3B0W18jAci-lTVWFCYA_WmDV4KIuEcAtcjIN2kPqiQ/exec', {
+        const res = await fetch('/api/gas/proxy', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'get_data', type: 'Documents' })
@@ -249,7 +280,7 @@ export default function ApplicantDashboard({ user }: { user: User }) {
     setUploading(true);
     setUploadStatus(`Menghapus ${type}...`);
     try {
-      await fetch('https://script.google.com/macros/s/AKfycbxxQ9HDOmYQ7ThrqP-8gOpLfPnU3B0W18jAci-lTVWFCYA_WmDV4KIuEcAtcjIN2kPqiQ/exec', {
+      await fetch('/api/gas/proxy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'delete_document', userId: user.userId, documentType: type })
@@ -300,11 +331,15 @@ export default function ApplicantDashboard({ user }: { user: User }) {
       </header>
 
       {/* Hero Notifications */}
-      {applications.filter(app => !dismissedWarnings.includes(app.id)).some(app => app.status === 'Approved' || app.status === 'Rejected') && (
+      {applications.filter(app => !dismissedWarnings.includes(app.id)).some(app => {
+        const st = String(app.status || '').toLowerCase();
+        return ['approved', 'disetujui', 'terpilih', 'wawancara', 'penawaran', 'menerima tawaran', 'menerima tawaran / tidak', 'rejected', 'ditolak'].includes(st);
+      }) && (
         <div className="space-y-3 mb-6">
           {applications.filter(app => !dismissedWarnings.includes(app.id)).map(app => {
             const job = getJobDetails(app.jobId);
-            if (app.status === 'Approved') {
+            const st = String(app.status || '').toLowerCase();
+            if (['approved', 'disetujui', 'terpilih', 'wawancara', 'penawaran', 'menerima tawaran', 'menerima tawaran / tidak'].includes(st)) {
               return (
                 <motion.div 
                   key={app.id}
@@ -314,8 +349,8 @@ export default function ApplicantDashboard({ user }: { user: User }) {
                 >
                   <CheckCircle className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
                   <div className="flex-1">
-                    <h4 className="font-bold text-base text-green-950">Selamat! Lamaran Anda Diterima</h4>
-                    <p className="text-xs text-green-800 mt-1">Lamaran Anda untuk posisi <strong>{job?.title || 'Pekerjaan'}</strong> telah disetujui. Silakan selesaikan <strong>Tes Online</strong> dan <strong>Wawancara AI Suara</strong> di menu navigasi.</p>
+                    <h4 className="font-bold text-base text-green-950">Update Tahap Lamaran: {app.status}</h4>
+                    <p className="text-xs text-green-800 mt-1">Lamaran Anda untuk posisi <strong>{job?.title || 'Pekerjaan'}</strong> saat ini berada pada tahap <strong>{app.status}</strong>. Silakan akses <strong>Tes Online</strong> dan <strong>Wawancara AI Suara</strong> di menu navigasi.</p>
                   </div>
                   <button 
                     onClick={() => handleDismissWarning(app.id)} 
@@ -327,7 +362,7 @@ export default function ApplicantDashboard({ user }: { user: User }) {
                 </motion.div>
               );
             }
-            if (app.status === 'Rejected') {
+            if (st === 'rejected' || st === 'ditolak') {
               return (
                 <motion.div 
                   key={app.id}
@@ -591,8 +626,9 @@ export default function ApplicantDashboard({ user }: { user: User }) {
               <div className="space-y-3">
                 {applications.map((app) => {
                   const job = getJobDetails(app.jobId);
-                  const isRejected = app.status === 'Rejected' || String(app.status).toLowerCase() === 'ditolak';
-                  const isApproved = app.status === 'Approved' || String(app.status).toLowerCase() === 'disetujui' || String(app.status).toLowerCase() === 'testing' || String(app.status).toLowerCase() === 'interview';
+                  const st = String(app.status || '').toLowerCase();
+                  const isRejected = st === 'rejected' || st === 'ditolak' || st === 'tidak menerima tawaran';
+                  const isApproved = ['approved', 'disetujui', 'testing', 'interview', 'terpilih', 'wawancara', 'penawaran', 'menerima tawaran', 'menerima tawaran / tidak'].includes(st);
                   
                   let bgClass = "bg-white border-slate-200 hover:border-slate-300";
                   if (isRejected) {
@@ -607,7 +643,7 @@ export default function ApplicantDashboard({ user }: { user: User }) {
                         <span className={`px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-widest rounded-full ${
                           isRejected ? 'bg-rose-200 text-rose-800' :
                           isApproved ? 'bg-emerald-200 text-emerald-800' :
-                          'bg-slate-100 text-slate-600'
+                          'bg-amber-100 text-amber-800'
                         }`}>
                           {app.status}
                         </span>
@@ -659,15 +695,6 @@ export default function ApplicantDashboard({ user }: { user: User }) {
                 uploadedInfo={uploadedDocs['Ijazah']}
                 onChange={(e) => handleUpload(e, 'Ijazah')} 
                 onDelete={() => handleDeleteDoc('Ijazah')}
-                disabled={uploading} 
-                accept=".pdf,.jpg,.jpeg,.png" 
-              />
-              <DocumentCard 
-                title="KTP / Identitas" 
-                type="KTP" 
-                uploadedInfo={uploadedDocs['KTP']}
-                onChange={(e) => handleUpload(e, 'KTP')} 
-                onDelete={() => handleDeleteDoc('KTP')}
                 disabled={uploading} 
                 accept=".pdf,.jpg,.jpeg,.png" 
               />

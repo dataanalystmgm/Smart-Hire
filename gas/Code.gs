@@ -11,7 +11,7 @@ function doPost(e) {
       
       // If empty, add headers
       if (sheet.getLastRow() === 0) {
-        sheet.appendRow(['ID', 'Name', 'Email', 'Password', 'Role', 'CreatedAt']);
+        sheet.appendRow(['ID', 'Name', 'Email', 'Password', 'Role', 'CreatedAt', 'Status']);
       }
       
       // Basic check
@@ -22,9 +22,11 @@ function doPost(e) {
       }
       
       const userId = Utilities.getUuid();
-      sheet.appendRow([userId, data.name, data.email, data.password, data.role || 'applicant', new Date().toISOString()]);
+      const role = data.role || 'applicant';
+      const userStatus = role === 'tim_mgm' ? 'Pending' : 'Approved';
+      sheet.appendRow([userId, data.name, data.email, data.password, role, new Date().toISOString(), userStatus]);
       
-      return ContentService.createTextOutput(JSON.stringify({ status: 'success', userId: userId, name: data.name, email: data.email, role: data.role || 'applicant' })).setMimeType(ContentService.MimeType.JSON);
+      return ContentService.createTextOutput(JSON.stringify({ status: 'success', userId: userId, name: data.name, email: data.email, role: role, userStatus: userStatus })).setMimeType(ContentService.MimeType.JSON);
     }
     
     if (action === 'login') {
@@ -35,7 +37,12 @@ function doPost(e) {
       const user = dataRange.find(row => row[2] === data.email && row[3] === data.password);
       
       if (user) {
-        return ContentService.createTextOutput(JSON.stringify({ status: 'success', userId: user[0], name: user[1], email: user[2], role: user[4] })).setMimeType(ContentService.MimeType.JSON);
+        const role = user[4];
+        const status = user[6] || 'Approved';
+        if (role === 'tim_mgm' && status !== 'Approved') {
+          return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Akun Tim MGM Anda masih menunggu persetujuan Administrator.' })).setMimeType(ContentService.MimeType.JSON);
+        }
+        return ContentService.createTextOutput(JSON.stringify({ status: 'success', userId: user[0], name: user[1], email: user[2], role: role })).setMimeType(ContentService.MimeType.JSON);
       } else {
         return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Invalid credentials' })).setMimeType(ContentService.MimeType.JSON);
       }
@@ -68,9 +75,15 @@ function doPost(e) {
 
     if (action === 'applyJob' || action === 'apply') {
       const sheet = SpreadsheetApp.openById(sheetId).getSheetByName('Applications') || SpreadsheetApp.openById(sheetId).insertSheet('Applications');
-      if (sheet.getLastRow() === 0) sheet.appendRow(['ID', 'UserID', 'UserName', 'JobID', 'JobTitle', 'Status', 'CreatedAt', 'AI Analysis']);
+      if (sheet.getLastRow() === 0) {
+        sheet.appendRow(['ID', 'UserID', 'UserName', 'JobID', 'JobTitle', 'Status', 'CreatedAt', 'AI Analysis', 'Stage']);
+      } else {
+        const headerI = sheet.getRange(1, 9).getValue();
+        if (!headerI) sheet.getRange(1, 9).setValue('Stage');
+      }
       const appId = Utilities.getUuid();
-      sheet.appendRow([appId, data.userId, data.userName || '', data.jobId, data.jobTitle || '', data.status || 'Applied', new Date().toISOString()]);
+      const stage = data.stage || data.status || 'Pre Screening';
+      sheet.appendRow([appId, data.userId, data.userName || '', data.jobId, data.jobTitle || '', stage, new Date().toISOString(), data.aiAnalysis || '', stage]);
       return ContentService.createTextOutput(JSON.stringify({ status: 'success', applicationId: appId })).setMimeType(ContentService.MimeType.JSON);
     }
     
@@ -152,12 +165,48 @@ function doPost(e) {
        if (!sheet) return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Applications sheet not found' })).setMimeType(ContentService.MimeType.JSON);
        const values = sheet.getDataRange().getValues();
        for (let i = 1; i < values.length; i++) {
-         if (values[i][0] === data.applicationId) {
-           sheet.getRange(i + 1, 6).setValue(data.status); // Status is the 6th column
+         if (String(values[i][0]) === String(data.applicationId) || (data.userId && String(values[i][1]) === String(data.userId))) {
+           sheet.getRange(i + 1, 6).setValue(data.status); // Column F (6th column) = Status
+           sheet.getRange(i + 1, 9).setValue(data.status); // Column I (9th column) = Stage
            return ContentService.createTextOutput(JSON.stringify({ status: 'success' })).setMimeType(ContentService.MimeType.JSON);
          }
        }
        return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Application ID not found' })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    if (action === 'update_application_stage') {
+       const sheet = SpreadsheetApp.openById(sheetId).getSheetByName('Applications');
+       if (!sheet) return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Applications sheet not found' })).setMimeType(ContentService.MimeType.JSON);
+       
+       const headerI = sheet.getRange(1, 9).getValue();
+       if (!headerI) sheet.getRange(1, 9).setValue('Stage');
+
+       const values = sheet.getDataRange().getValues();
+       for (let i = 1; i < values.length; i++) {
+         if (String(values[i][0]) === String(data.applicationId) || (data.userId && String(values[i][1]) === String(data.userId))) {
+           sheet.getRange(i + 1, 6).setValue(data.stage); // Column F (6th column) = Status
+           sheet.getRange(i + 1, 9).setValue(data.stage); // Column I (9th column) = Stage
+           return ContentService.createTextOutput(JSON.stringify({ status: 'success' })).setMimeType(ContentService.MimeType.JSON);
+         }
+       }
+       return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Application ID not found' })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    if (action === 'approve_user') {
+       const sheet = SpreadsheetApp.openById(sheetId).getSheetByName('Users');
+       if (!sheet) return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Users sheet not found' })).setMimeType(ContentService.MimeType.JSON);
+       
+       const headerStatus = sheet.getRange(1, 7).getValue();
+       if (!headerStatus) sheet.getRange(1, 7).setValue('Status');
+
+       const values = sheet.getDataRange().getValues();
+       for (let i = 1; i < values.length; i++) {
+         if (String(values[i][0]) === String(data.userId)) {
+           sheet.getRange(i + 1, 7).setValue(data.status); // Column G (7th column)
+           return ContentService.createTextOutput(JSON.stringify({ status: 'success' })).setMimeType(ContentService.MimeType.JSON);
+         }
+       }
+       return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'User ID not found' })).setMimeType(ContentService.MimeType.JSON);
     }
 
     if (action === 'update_test_evaluation') {
@@ -234,6 +283,11 @@ function doPost(e) {
       const sheet = SpreadsheetApp.openById(sheetId).getSheetByName(type);
       if (!sheet) return ContentService.createTextOutput(JSON.stringify({ status: 'success', data: [] })).setMimeType(ContentService.MimeType.JSON);
       
+      if (type === 'Applications') {
+        const headerI = sheet.getRange(1, 9).getValue();
+        if (!headerI) sheet.getRange(1, 9).setValue('Stage');
+      }
+
       const dataRange = sheet.getDataRange().getValues();
       const headers = dataRange[0];
       const result = [];

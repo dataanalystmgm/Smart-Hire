@@ -1,18 +1,22 @@
 import React from 'react';
 
 interface VisualLogicQuestionProps {
-  questionId: string;
+  question: any;
   selectedOption: string;
   onChange: (value: string) => void;
 }
 
-export default function VisualLogicQuestion({ questionId, selectedOption, onChange }: VisualLogicQuestionProps) {
+export default function VisualLogicQuestion({ question, selectedOption, onChange }: VisualLogicQuestionProps) {
+  const questionId = question.id;
   // Common Box Styles
   const boxClass = "w-20 h-20 md:w-24 md:h-24 bg-white border border-slate-200 rounded-xl shadow-sm flex items-center justify-center relative overflow-hidden";
   const labelClass = "text-[10px] md:text-xs font-bold text-slate-400 absolute bottom-1 right-1.5";
 
   // Render Question Sequence of 4 boxes
   const renderQuestionSequence = () => {
+    if (question.imageUrl) {
+      return <img src={question.imageUrl} alt="Soal" className="max-w-full h-auto rounded shadow-sm object-contain max-h-[300px]" />;
+    }
     switch (questionId) {
       case 'lg1': // Matrix Progression / Grid Rotation
         return (
@@ -517,6 +521,9 @@ export default function VisualLogicQuestion({ questionId, selectedOption, onChan
 
   // Render option diagrams for choices (A, B, C, D)
   const renderOptionDiagram = (opt: string) => {
+    if (question.optionImages && question.optionImages[opt]) {
+      return <img src={question.optionImages[opt]} alt={`Opsi ${opt}`} className="max-w-full h-auto rounded shadow-sm object-contain max-h-[100px]" />;
+    }
     switch (questionId) {
       case 'lg1': // Matrix Progression / Grid Rotation
         if (opt === 'A') { // Correct: Bottom-Right
