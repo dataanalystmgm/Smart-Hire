@@ -20,6 +20,7 @@ import {
   FolderOpen
 } from 'lucide-react';
 import { getJobs } from '../data/jobs';
+import { GoogleSheetsService } from '../services/googleSheets';
 
 interface UserProfile {
   fullName: string;
@@ -59,19 +60,37 @@ export default function ApplicantDashboard({ user }: { user: User }) {
     // Fetch Applications from Sheet
     const fetchApplications = async () => {
       try {
-        const res = await fetch('/api/gas/proxy', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'get_data', type: 'Applications' })
-        });
-        const d = await res.json();
+        let rawData: any[] = [];
+        try {
+          const direct = await GoogleSheetsService.getApplications();
+          if (Array.isArray(direct) && direct.length > 0) {
+            rawData = direct;
+          }
+        } catch (e) {
+          console.warn('Direct fetch applications failed, trying proxy fallback:', e);
+        }
+
+        if (rawData.length === 0) {
+          try {
+            const res = await fetch('/api/gas/proxy', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'get_data', type: 'Applications' })
+            });
+            const d = await res.json();
+            if (d.status === 'success' && Array.isArray(d.data)) {
+              rawData = d.data;
+            }
+          } catch {}
+        }
+
         const stored = localStorage.getItem('mgm_applications');
         let localApps = stored ? JSON.parse(stored) : [];
         const storedStages = localStorage.getItem('mgm_candidate_stages');
         const stageOverrides = storedStages ? JSON.parse(storedStages) : {};
 
-        if (d.status === 'success' && d.data) {
-          const mappedApps: Application[] = d.data
+        if (rawData.length > 0) {
+          const mappedApps: Application[] = rawData
             .filter((app: any) => String(app.UserID || app.userId || '') === String(user.userId))
             .map((app: any) => {
               const appId = app.ID || app.id;
@@ -80,8 +99,8 @@ export default function ApplicantDashboard({ user }: { user: User }) {
                 id: appId,
                 userId: app.UserID || app.userId,
                 jobId: app.JobID || app.jobId,
-                status: localMatch?.status || stageOverrides[user.userId] || app.Status || app.status,
-                createdAt: app.CreatedAt || app.createdAt
+                status: localMatch?.status || stageOverrides[user.userId] || app.Status || app.status || 'Pre Screening',
+                createdAt: app.CreatedAt || app.createdAt || new Date().toISOString()
               };
             });
 
@@ -113,7 +132,7 @@ export default function ApplicantDashboard({ user }: { user: User }) {
           setApplications(userLocalApps);
         }
       } catch (err) {
-        console.warn('Failed to fetch applications from GAS:', err);
+        console.warn('Failed to fetch applications from Sheet:', err);
         const stored = localStorage.getItem('mgm_applications');
         if (stored) {
           const localApps = JSON.parse(stored).filter((la: any) => String(la.userId) === String(user.userId));
@@ -126,14 +145,32 @@ export default function ApplicantDashboard({ user }: { user: User }) {
     // Fetch Documents from Sheet
     const fetchDocuments = async () => {
       try {
-        const res = await fetch('/api/gas/proxy', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'get_data', type: 'Documents' })
-        });
-        const d = await res.json();
-        if (d.status === 'success' && d.data) {
-          const userDocs = d.data.filter((doc: any) => String(doc.UserID || doc.userId || '') === String(user.userId));
+        let rawDocs: any[] = [];
+        try {
+          const direct = await GoogleSheetsService.getDocuments(user.userId);
+          if (Array.isArray(direct) && direct.length > 0) {
+            rawDocs = direct;
+          }
+        } catch (e) {
+          console.warn('Direct fetch documents failed, trying proxy fallback:', e);
+        }
+
+        if (rawDocs.length === 0) {
+          try {
+            const res = await fetch('/api/gas/proxy', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'get_data', type: 'Documents' })
+            });
+            const d = await res.json();
+            if (d.status === 'success' && Array.isArray(d.data)) {
+              rawDocs = d.data;
+            }
+          } catch {}
+        }
+
+        if (rawDocs.length > 0) {
+          const userDocs = rawDocs.filter((doc: any) => String(doc.UserID || doc.userId || '') === String(user.userId));
           const newDocs: Record<string, { fileName: string; uploadedAt: string }> = {};
           userDocs.forEach((doc: any) => {
             const type = doc.DocumentType || doc.documentType;
@@ -151,7 +188,7 @@ export default function ApplicantDashboard({ user }: { user: User }) {
            loadLocalDocs();
         }
       } catch (err) {
-        console.warn('Failed to fetch docs from GAS:', err);
+        console.warn('Failed to fetch docs from Sheet:', err);
         loadLocalDocs();
       }
     };

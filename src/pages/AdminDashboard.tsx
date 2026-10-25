@@ -389,42 +389,52 @@ export default function AdminDashboard() {
   const loadAllCandidateData = async () => {
     setLoading(true);
     try {
+      // Helper to fetch directly from Google Sheets service (CORS-enabled public endpoint that works anywhere, including Vercel)
+      const fetchWithFallback = async (sheetType: string, directFetchFn: () => Promise<any[]>) => {
+        try {
+          const directData = await directFetchFn();
+          if (Array.isArray(directData) && directData.length > 0) {
+            return directData;
+          }
+        } catch (e) {
+          console.warn(`Direct fetch for ${sheetType} failed, trying API proxy:`, e);
+        }
+        try {
+          const res = await fetch('/api/gas/proxy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'get_data', type: sheetType })
+          });
+          const d = await res.json();
+          if (d.status === 'success' && Array.isArray(d.data)) return d.data;
+        } catch {}
+        return [];
+      };
+
       const [resUsers, resApps, resDocs, resTests, resInterviews, fetchedJobs] = await Promise.allSettled([
-        fetch('/api/gas/proxy', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'get_data', type: 'Users' })
-        }).then(r => r.json()),
-        fetch('/api/gas/proxy', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'get_data', type: 'Applications' })
-        }).then(r => r.json()),
-        fetch('/api/gas/proxy', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'get_data', type: 'Documents' })
-        }).then(r => r.json()),
-        fetch('/api/gas/proxy', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'get_data', type: 'TestResults' })
-        }).then(r => r.json()),
-        fetch('/api/gas/proxy', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'get_data', type: 'Interviews' })
-        }).then(r => r.json()),
+        fetchWithFallback('Users', () => GoogleSheetsService.getUsers()),
+        fetchWithFallback('Applications', () => GoogleSheetsService.getApplications()),
+        fetchWithFallback('Documents', () => GoogleSheetsService.getDocuments()),
+        fetchWithFallback('TestResults', () => GoogleSheetsService.getTestResults()),
+        fetchWithFallback('Interviews', () => GoogleSheetsService.getInterviews()),
         getJobs()
       ]);
 
       const jobsList = fetchedJobs.status === 'fulfilled' && Array.isArray(fetchedJobs.value) ? fetchedJobs.value : [];
       setOpenJobs(jobsList);
 
+      const extractList = (res: PromiseSettledResult<any>): any[] => {
+        if (res.status !== 'fulfilled' || !res.value) return [];
+        if (Array.isArray(res.value)) return res.value;
+        if (Array.isArray(res.value?.data)) return res.value.data;
+        return [];
+      };
+
       // Normalize Users
+      const usersFromDb = extractList(resUsers);
       let rawUsers: any[] = [];
-      if (resUsers.status === 'fulfilled' && resUsers.value?.status === 'success' && !resUsers.value?.mocked && Array.isArray(resUsers.value?.data)) {
-        rawUsers = resUsers.value.data;
+      if (usersFromDb.length > 0) {
+        rawUsers = usersFromDb;
       } else {
         const storedUsers = localStorage.getItem('mgm_users');
         rawUsers = storedUsers ? JSON.parse(storedUsers) : [
@@ -441,9 +451,10 @@ export default function AdminDashboard() {
       const localAppsList: any[] = storedAppsStr ? JSON.parse(storedAppsStr) : [];
 
       // Normalize Applications
+      const appsFromDb = extractList(resApps);
       let rawApps: any[] = [];
-      if (resApps.status === 'fulfilled' && resApps.value?.status === 'success' && !resApps.value?.mocked && Array.isArray(resApps.value?.data)) {
-        rawApps = resApps.value.data;
+      if (appsFromDb.length > 0) {
+        rawApps = appsFromDb;
       } else if (localAppsList.length > 0) {
         rawApps = localAppsList;
       } else {
@@ -472,9 +483,10 @@ export default function AdminDashboard() {
       });
 
       // Normalize Documents
+      const docsFromDb = extractList(resDocs);
       let rawDocs: any[] = [];
-      if (resDocs.status === 'fulfilled' && resDocs.value?.status === 'success' && !resDocs.value?.mocked && Array.isArray(resDocs.value?.data)) {
-        rawDocs = resDocs.value.data;
+      if (docsFromDb.length > 0) {
+        rawDocs = docsFromDb;
       } else {
         const storedDocs = localStorage.getItem('mgm_documents');
         rawDocs = storedDocs ? JSON.parse(storedDocs) : [
@@ -488,9 +500,10 @@ export default function AdminDashboard() {
       }
 
       // Normalize TestResults
+      const testsFromDb = extractList(resTests);
       let rawTests: any[] = [];
-      if (resTests.status === 'fulfilled' && resTests.value?.status === 'success' && !resDocs.value?.mocked && Array.isArray(resTests.value?.data)) {
-        rawTests = resTests.value.data;
+      if (testsFromDb.length > 0) {
+        rawTests = testsFromDb;
       } else {
         const storedResults = localStorage.getItem('mgm_test_results');
         rawTests = storedResults ? JSON.parse(storedResults) : [
@@ -500,9 +513,10 @@ export default function AdminDashboard() {
       }
 
       // Normalize Interviews
+      const interviewsFromDb = extractList(resInterviews);
       let rawInterviews: any[] = [];
-      if (resInterviews.status === 'fulfilled' && resInterviews.value?.status === 'success' && !resInterviews.value?.mocked && Array.isArray(resInterviews.value?.data)) {
-        rawInterviews = resInterviews.value.data;
+      if (interviewsFromDb.length > 0) {
+        rawInterviews = interviewsFromDb;
       } else {
         const storedInterviews = localStorage.getItem('mgm_interviews');
         rawInterviews = storedInterviews ? JSON.parse(storedInterviews) : [

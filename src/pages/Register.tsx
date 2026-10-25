@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { User } from '../types';
 import { motion } from 'framer-motion';
+import { GoogleSheetsService } from '../services/googleSheets';
 
 export default function Register({ setUser }: { setUser: (u: User) => void }) {
   const [name, setName] = useState('');
@@ -20,14 +21,47 @@ export default function Register({ setUser }: { setUser: (u: User) => void }) {
     setSuccessMsg('');
 
     try {
-      const response = await fetch('/api/gas/proxy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'register', name, email, password, role })
-      });
-      const data = await response.json();
+      let regSuccess = false;
+      let registeredUserId = '';
+
+      try {
+        const directRes = await GoogleSheetsService.registerUser({
+          name: name.trim(),
+          email: email.trim(),
+          password: password.trim(),
+          role
+        });
+        if (directRes?.userId) {
+          regSuccess = true;
+          registeredUserId = directRes.userId;
+        }
+      } catch (directErr: any) {
+        if (directErr.message?.includes('sudah terdaftar') || directErr.message?.includes('already exists')) {
+          setError(directErr.message);
+          setLoading(false);
+          return;
+        }
+        console.warn('Direct register failed, trying proxy fallback:', directErr);
+      }
+
+      if (!regSuccess) {
+        const response = await fetch('/api/gas/proxy', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'register', name, email, password, role })
+        });
+        const data = await response.json();
+        if (data.status === 'success' || data.mocked) {
+          regSuccess = true;
+          registeredUserId = data.userId || 'usr_' + Math.random().toString(36).substring(2, 9);
+        } else {
+          setError(data.message || 'Registration failed');
+          setLoading(false);
+          return;
+        }
+      }
       
-      if (data.status === 'success' || data.mocked) {
+      if (regSuccess) {
         if (role === 'mgm team') {
           setSuccessMsg('Registrasi berhasil sebagai MGM Team. Akun Anda sedang menunggu persetujuan administrator.');
           setLoading(false);
@@ -37,12 +71,10 @@ export default function Register({ setUser }: { setUser: (u: User) => void }) {
           return;
         }
 
-        const user = { userId: data.userId || 'user_' + Math.random(), name, email, role: 'applicant' as const };
+        const user = { userId: registeredUserId || 'user_' + Math.random(), name, email, role: 'applicant' as const };
         setUser(user);
         localStorage.setItem('mgm_user', JSON.stringify(user));
         navigate('/dashboard');
-      } else {
-        setError(data.message || 'Registration failed');
       }
     } catch (err) {
       if (role === 'mgm team') {

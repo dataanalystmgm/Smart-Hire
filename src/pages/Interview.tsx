@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { User } from '../types';
 import { getJobs } from '../data/jobs';
+import { GoogleSheetsService } from '../services/googleSheets';
 import { motion } from 'framer-motion';
 import {
   Mic,
@@ -84,17 +85,28 @@ export default function Interview({ user }: { user: User }) {
 
       // 1. Fetch Applications from Sheet
       try {
-        const res = await fetch('/api/gas/proxy', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'get_data', type: 'Applications' })
-        });
-        const d = await res.json();
-        if (d.status === 'success' && Array.isArray(d.data) && d.data.length > 0) {
-          applicationsList = d.data;
+        const directApps = await GoogleSheetsService.getApplications();
+        if (Array.isArray(directApps) && directApps.length > 0) {
+          applicationsList = directApps;
         }
       } catch (err) {
-        console.warn('Failed to fetch applications from GAS:', err);
+        console.warn('Direct fetch applications failed, trying proxy:', err);
+      }
+
+      if (applicationsList.length === 0) {
+        try {
+          const res = await fetch('/api/gas/proxy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'get_data', type: 'Applications' })
+          });
+          const d = await res.json();
+          if (d.status === 'success' && Array.isArray(d.data) && d.data.length > 0) {
+            applicationsList = d.data;
+          }
+        } catch (err) {
+          console.warn('Failed to fetch applications from GAS:', err);
+        }
       }
 
       // Merge with local storage applications
@@ -151,17 +163,28 @@ export default function Interview({ user }: { user: User }) {
 
       // 2. Fetch Interviews from Sheet
       try {
-        const res = await fetch('/api/gas/proxy', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'get_data', type: 'Interviews' })
-        });
-        const d = await res.json();
-        if (d.status === 'success' && Array.isArray(d.data) && d.data.length > 0) {
-          interviewsList = d.data;
+        const directInt = await GoogleSheetsService.getInterviews();
+        if (Array.isArray(directInt) && directInt.length > 0) {
+          interviewsList = directInt;
         }
       } catch (err) {
-        console.warn('Failed to fetch interviews from GAS:', err);
+        console.warn('Direct fetch interviews failed, trying proxy:', err);
+      }
+
+      if (interviewsList.length === 0) {
+        try {
+          const res = await fetch('/api/gas/proxy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'get_data', type: 'Interviews' })
+          });
+          const d = await res.json();
+          if (d.status === 'success' && Array.isArray(d.data) && d.data.length > 0) {
+            interviewsList = d.data;
+          }
+        } catch (err) {
+          console.warn('Failed to fetch interviews from GAS:', err);
+        }
       }
 
       try {
