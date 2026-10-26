@@ -81,7 +81,9 @@ export interface SavedJob {
 export interface JobAlert {
   id: string;
   userId: string;
+  title?: string;
   keyword?: string;
+  keywords?: string;
   classification?: string;
   location?: string;
   workArrangement?: string;

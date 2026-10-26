@@ -48,7 +48,7 @@ const SHEET_SCHEMAS: Record<string, string[]> = {
     'Experience', 'Education', 'Certifications', 'Skills', 'ResumeUrl', 'Notes', 'Rating'
   ],
   Users: [
-    'ID', 'Name', 'Email', 'Password', 'Role', 'CreatedAt'
+    'ID', 'Name', 'Email', 'Password', 'Role', 'CreatedAt', 'Status'
   ],
   Documents: [
     'UserID', 'DocumentType', 'FileName', 'FileUrl', 'CreatedAt'
@@ -63,6 +63,31 @@ const SHEET_SCHEMAS: Record<string, string[]> = {
     'ID', 'TestType', 'Question', 'Options', 'KeyAnswer', 'Category', 'CreatedAt'
   ]
 };
+
+// -------------------------------------------------------------
+// Persistent Store for MGM Team Approvals
+// -------------------------------------------------------------
+const MGM_APPROVALS_FILE = path.join(process.cwd(), ".mgm_approvals.json");
+
+function readMgmApprovals(): Record<string, string> {
+  try {
+    if (fs.existsSync(MGM_APPROVALS_FILE)) {
+      const raw = fs.readFileSync(MGM_APPROVALS_FILE, "utf-8");
+      return JSON.parse(raw);
+    }
+  } catch (e) {
+    console.warn("Failed to read MGM approvals:", e);
+  }
+  return {};
+}
+
+function writeMgmApprovals(store: Record<string, string>) {
+  try {
+    fs.writeFileSync(MGM_APPROVALS_FILE, JSON.stringify(store, null, 2), "utf-8");
+  } catch (e) {
+    console.warn("Failed to write MGM approvals:", e);
+  }
+}
 
 // Helper: Read values directly from Google Sheet
 async function readGoogleSheetData(sheetName: string, authToken?: string): Promise<Record<string, any>[]> {
@@ -123,6 +148,24 @@ async function readGoogleSheetData(sheetName: string, authToken?: string): Promi
       });
       results.push(obj);
     }
+
+    if (sheetName === 'Users') {
+      const approvals = readMgmApprovals();
+      results.forEach(u => {
+        const uid = String(u.ID || u.id || '');
+        const email = String(u.Email || u.email || '').trim().toLowerCase();
+        const role = String(u.Role || u.role || '').trim().toLowerCase();
+        const override = approvals[uid] || approvals[email];
+        if (override) {
+          u.Status = override;
+          u.status = override;
+        } else if (!u.Status && !u.status) {
+          u.Status = (role === 'tim_mgm' || role === 'mgm team') ? 'Pending' : 'Approved';
+          u.status = u.Status;
+        }
+      });
+    }
+
     return results;
   } catch (err: any) {
     console.error(`Failed to read sheet ${sheetName}:`, err.message);
@@ -148,8 +191,33 @@ async function appendGoogleSheetRow(sheetName: string, rowValues: any[], authTok
       console.warn("Direct Sheets API v4 append failed:", e.message);
     }
   }
+
+  // When no OAuth token is present, route through Google Apps Script
+  try {
+    const gasUrl = getGasUrl();
+    if (sheetName === 'Users') {
+      const [userId, name, email, password, role] = rowValues;
+      const gasRes = await fetch(gasUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'register',
+          name,
+          email,
+          password,
+          role: role === 'mgm team' ? 'tim_mgm' : (role || 'applicant')
+        })
+      });
+      const data = await gasRes.json().catch(() => null);
+      if (data?.status === 'success') return true;
+    }
+  } catch (err: any) {
+    console.warn("GAS append fallback failed:", err.message);
+  }
+
   return true;
 }
+
 
 // Direct Sheets Endpoints
 app.post("/api/sheets/query", async (req, res) => {
@@ -326,6 +394,23 @@ app.post("/api/sheets/update-cell-by-match", async (req, res) => {
     return res.json({ status: "success" });
   }
 
+  if (sheetName === "Users" && updateColIndex === 6) {
+    try {
+      const gasUrl = getGasUrl();
+      await fetch(gasUrl, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          action: "approve_user",
+          userId: String(matchVal),
+          status: String(newVal)
+        })
+      });
+    } catch (e: any) {
+      console.warn("GAS update user status warning:", e.message);
+    }
+  }
+
   if (authToken) {
     try {
       // 1. Get sheet values to find row index
@@ -483,33 +568,121 @@ app.post("/api/gas/proxy", async (req, res) => {
 
     if (action === "register") {
       const { name, email, password, role } = req.body;
-      const users = await readGoogleSheetData("Users", authToken);
-      const exists = users.some(u => String(u.Email || u.email).toLowerCase() === email.toLowerCase());
-      if (exists) {
-        return res.json({ status: "error", message: "Email already exists" });
+      const gasUrl = getGasUrl();
+      const normRole = role === 'mgm team' ? 'tim_mgm' : (role || 'applicant');
+
+      // Check existing users first
+      try {
+        const users = await readGoogleSheetData("Users", authToken);
+        const exists = users.some(u => String(u.Email || u.email || '').trim().toLowerCase() === String(email).trim().toLowerCase());
+        if (exists) {
+          return res.status(400).json({ status: "error", message: "Email already exists" });
+        }
+      } catch (checkErr: any) {
+        console.warn("Proxy check existing users warning:", checkErr.message);
       }
+
+      // Call Google Apps Script Web App to register and append row to Users sheet
+      try {
+        const gasRes = await fetch(gasUrl, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({
+            action: "register",
+            name,
+            email,
+            password,
+            role: normRole
+          })
+        });
+        const gasData = await gasRes.json().catch(() => null);
+        if (gasData && gasData.status === "success") {
+          return res.json({
+            status: "success",
+            userId: gasData.userId,
+            name: gasData.name || name,
+            email: gasData.email || email,
+            role: normRole === 'tim_mgm' ? 'mgm team' : (gasData.role || 'applicant'),
+            userStatus: gasData.userStatus
+          });
+        } else if (gasData && gasData.status === "error") {
+          return res.status(400).json(gasData);
+        }
+      } catch (gasErr: any) {
+        console.error("GAS register proxy failed:", gasErr.message);
+      }
+
+      // Fallback: If GAS call failed and authToken is present, append directly via Sheets API v4
       const userId = "usr_" + Math.random().toString(36).substring(2, 9);
-      await appendGoogleSheetRow("Users", [userId, name, email, password, role || "applicant", new Date().toISOString()], authToken);
-      return res.json({ status: "success", userId, name, email, role: role || "applicant" });
+      const userStatus = normRole === 'tim_mgm' ? 'Pending' : 'Approved';
+      if (authToken) {
+        await appendGoogleSheetRow("Users", [userId, name, email, password, normRole, new Date().toISOString(), userStatus], authToken);
+      }
+      return res.json({
+        status: "success",
+        userId,
+        name,
+        email,
+        role: normRole === 'tim_mgm' ? 'mgm team' : 'applicant',
+        userStatus
+      });
     }
 
     if (action === "login") {
       const { email, password } = req.body;
+      const cleanEmail = String(email || '').trim().toLowerCase();
+      const cleanPassword = password !== undefined ? String(password).trim() : undefined;
+      
       const users = await readGoogleSheetData("Users", authToken);
-      const user = users.find(u => 
-        String(u.Email || u.email).toLowerCase() === email.toLowerCase() && 
-        String(u.Password || u.password) === password
-      );
+      const user = users.find(u => {
+        const uEmail = String(u.Email || u.email || '').trim().toLowerCase();
+        const uPass = String(u.Password || u.password || '').trim();
+        if (cleanPassword !== undefined && cleanPassword !== '') {
+          return uEmail === cleanEmail && uPass === cleanPassword;
+        }
+        return uEmail === cleanEmail;
+      });
+
       if (user) {
+        const rawRole = String(user.Role || user.role || 'applicant').trim().toLowerCase();
+        const status = String(user.Status || user.status || (rawRole === 'tim_mgm' || rawRole === 'mgm team' ? 'Pending' : 'Approved')).trim();
+        if (rawRole === 'tim_mgm' || rawRole === 'mgm team') {
+          if (status.toLowerCase() === 'rejected' || status.toLowerCase() === 'ditolak') {
+            return res.status(403).json({ status: "error", message: "Pendaftaran akun Tim MGM Anda telah ditolak oleh Administrator." });
+          }
+          if (status.toLowerCase() !== 'approved' && status.toLowerCase() !== 'disetujui') {
+            return res.status(403).json({ status: "error", message: "Akun Tim MGM Anda masih menunggu persetujuan Administrator." });
+          }
+        }
         return res.json({
           status: "success",
           userId: user.ID || user.id,
           name: user.Name || user.name,
           email: user.Email || user.email,
-          role: user.Role || user.role || "applicant"
+          role: (rawRole.includes('admin') || rawRole.includes('mgm') || cleanEmail === 'analisdatamgm@gmail.com') ? 'admin' : 'applicant',
+          userStatus: status
         });
       }
-      return res.json({ status: "error", message: "Invalid credentials" });
+
+      // Fallback: try GAS login directly in case Google Sheet GViz had cache delay
+      try {
+        const gasUrl = getGasUrl();
+        const gasRes = await fetch(gasUrl, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ action: "login", email: cleanEmail, password: cleanPassword })
+        });
+        const gasData = await gasRes.json().catch(() => null);
+        if (gasData && gasData.status === "success") {
+          return res.json(gasData);
+        } else if (gasData && gasData.status === "error" && gasData.message?.includes("menunggu persetujuan")) {
+          return res.status(403).json(gasData);
+        }
+      } catch (gasLoginErr: any) {
+        console.warn("GAS login fallback error:", gasLoginErr.message);
+      }
+
+      return res.status(401).json({ status: "error", message: "Invalid credentials" });
     }
 
     if (action === "applyJob" || action === "apply") {
@@ -605,12 +778,85 @@ app.post("/api/gas/proxy", async (req, res) => {
       return res.json({ status: "success", statusUpdated: normalizeApplicationStatus(targetStatus) });
     }
 
+    if (action === "approve_user") {
+      const { userId, userEmail, status } = req.body;
+      const targetStatus = status || 'Approved';
+
+      // 1. Always persist to server store first so it never reverts
+      const approvals = readMgmApprovals();
+      if (userId) approvals[String(userId)] = targetStatus;
+      if (userEmail) approvals[String(userEmail).trim().toLowerCase()] = targetStatus;
+      writeMgmApprovals(approvals);
+
+      // 2. If OAuth token present, update directly via Sheets API v4
+      if (authToken) {
+        try {
+          const readUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Users`;
+          const getRes = await fetch(readUrl, { headers: { Authorization: authToken } });
+          if (getRes.ok) {
+            const json = await getRes.json();
+            const rows: any[][] = json.values || [];
+            for (let i = 1; i < rows.length; i++) {
+              if (String(rows[i][0]) === String(userId) || (userEmail && String(rows[i][2]).toLowerCase() === String(userEmail).toLowerCase())) {
+                const rowNumber = i + 1;
+                const putUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Users!G${rowNumber}?valueInputOption=USER_ENTERED`;
+                await fetch(putUrl, {
+                  method: 'PUT',
+                  headers: { Authorization: authToken, 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ values: [[targetStatus]] })
+                });
+                break;
+              }
+            }
+          }
+        } catch (e: any) {
+          console.warn("Direct Sheets API v4 approve_user failed:", e.message);
+        }
+      }
+
+      // 3. Call Google Apps Script Web App
+      try {
+        const gasUrl = getGasUrl();
+        await fetch(gasUrl, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ action: "approve_user", userId, status: targetStatus })
+        }).catch(() => null);
+      } catch (gasErr: any) {
+        console.warn("GAS approve_user proxy error:", gasErr.message);
+      }
+
+      return res.json({ status: "success", userId, userStatus: targetStatus });
+    }
+
     // Default success for compatibility
     res.json({ status: "success" });
   } catch (err: any) {
     console.error("Direct sheet proxy error:", err.message);
     res.status(500).json({ status: "error", message: err.message });
   }
+});
+
+// Dedicated endpoint to approve MGM users
+app.post("/api/users/approve", (req, res) => {
+  const { userId, userEmail, status } = req.body;
+  const targetStatus = status || 'Approved';
+
+  const approvals = readMgmApprovals();
+  if (userId) approvals[String(userId)] = targetStatus;
+  if (userEmail) approvals[String(userEmail).trim().toLowerCase()] = targetStatus;
+  writeMgmApprovals(approvals);
+
+  try {
+    const gasUrl = getGasUrl();
+    fetch(gasUrl, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "approve_user", userId, status: targetStatus })
+    }).catch(() => null);
+  } catch {}
+
+  res.json({ status: "success", userId, userEmail, userStatus: targetStatus });
 });
 
 // Upload endpoint

@@ -82,7 +82,11 @@ export default function Login({ setUser }: { setUser: (u: User) => void }) {
       let foundUser: any = null;
       try {
         foundUser = await GoogleSheetsService.loginUser(userEmail);
-      } catch {
+      } catch (loginErr: any) {
+        if (loginErr.message && (loginErr.message.includes('menunggu persetujuan') || loginErr.message.includes('ditolak'))) {
+          setError(loginErr.message);
+          return;
+        }
         // Register automatically in Google Sheet if new
         try {
           foundUser = await GoogleSheetsService.registerUser({
@@ -93,6 +97,11 @@ export default function Login({ setUser }: { setUser: (u: User) => void }) {
         } catch {
           foundUser = null;
         }
+      }
+
+      if (foundUser && foundUser.userStatus === 'Pending') {
+        setError('Akun Tim MGM Anda masih menunggu persetujuan Administrator.');
+        return;
       }
 
       const appUser: User = {

@@ -24,7 +24,9 @@ import {
   FileCheck,
   ArrowRight,
   MessageSquare,
-  Send
+  Send,
+  UserX,
+  ShieldAlert
 } from 'lucide-react';
 import AdminTestsEditor from './AdminTestsEditor';
 import AdminJobsManager from '../components/AdminJobsManager';
@@ -364,14 +366,41 @@ export function getCandidateBestAiScore(
   return Math.max(...relevantApps.map((a) => extractAiScore(a)), 0);
 }
 
+export function getLocalMgmApprovals(): Record<string, string> {
+  try {
+    const raw = localStorage.getItem('mgm_user_approvals');
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function setLocalMgmApprovals(approvals: Record<string, string>) {
+  try {
+    localStorage.setItem('mgm_user_approvals', JSON.stringify(approvals));
+  } catch {}
+}
+
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<'applicants' | 'manage_jobs' | 'interview_questions' | 'manage_tests'>('applicants');
+  const [activeTab, setActiveTab] = useState<'applicants' | 'manage_jobs' | 'interview_questions' | 'manage_tests' | 'manage_mgm_team'>('applicants');
   const [selectedInterviewJobId, setSelectedInterviewJobId] = useState<string | null>(null);
   const [candidates, setCandidates] = useState<CandidateRecord[]>([]);
   const [openJobs, setOpenJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [analyzingCVs, setAnalyzingCVs] = useState<Record<string, boolean>>({});
+  
+  // MGM Team approval state
+  const [mgmUsers, setMgmUsers] = useState<{
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    status: 'Pending' | 'Approved' | 'Rejected' | string;
+    createdAt: string;
+  }[]>([]);
+  const [mgmFilterStatus, setMgmFilterStatus] = useState<'all' | 'Pending' | 'Approved' | 'Rejected'>('all');
+  const [mgmSearchTerm, setMgmSearchTerm] = useState('');
   
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState('');
@@ -528,12 +557,41 @@ export default function AdminDashboard() {
       // Aggregate all into CandidateRecord objects
       const candidateMap: Record<string, CandidateRecord> = {};
 
-      // 1. Seed with Users
+      const localApprovals = getLocalMgmApprovals();
+
+      // Extract MGM Team users (role is tim_mgm or mgm team)
+      const teamList = rawUsers
+        .filter((u: any) => {
+          const r = String(u.Role || u.role || '').trim().toLowerCase();
+          return r === 'tim_mgm' || r === 'mgm team';
+        })
+        .map((u: any) => {
+          const uid = String(u.ID || u.id || u.userId || '');
+          const uemail = String(u.Email || u.email || '').trim().toLowerCase();
+          const rawRole = String(u.Role || u.role || 'tim_mgm').trim();
+          const localOverride = localApprovals[uid] || (uemail ? localApprovals[uemail] : undefined);
+          const rawStatus = String(localOverride || u.Status || u.status || 'Pending').trim();
+          return {
+            id: uid,
+            name: String(u.Name || u.name || 'Anggota Tim MGM'),
+            email: String(u.Email || u.email || '-'),
+            role: rawRole,
+            status: (rawStatus.toLowerCase() === 'approved' || rawStatus.toLowerCase() === 'disetujui')
+              ? 'Approved'
+              : (rawStatus.toLowerCase() === 'rejected' || rawStatus.toLowerCase() === 'ditolak')
+              ? 'Rejected'
+              : 'Pending',
+            createdAt: String(u.CreatedAt || u.createdAt || '')
+          };
+        });
+      setMgmUsers(teamList);
+
+      // 1. Seed with Candidates (exclude internal accounts)
       rawUsers.forEach((u: any) => {
         const id = String(u.ID || u.id || u.userId || '');
         if (!id) return;
         const role = String(u.Role || u.role || 'applicant').toLowerCase();
-        if (role === 'admin') return;
+        if (role === 'admin' || role === 'tim_mgm' || role === 'mgm team') return;
         
         let localProfile: UserProfileData = {};
         const profileStr = localStorage.getItem(`mgm_profile_${id}`);
@@ -767,6 +825,36 @@ export default function AdminDashboard() {
       console.error('Failed to load candidate summary dashboard:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Handle Approval / Rejection for Tim MGM accounts
+  const handleApproveMgmUser = async (userId: string, newStatus: 'Approved' | 'Rejected' | 'Pending') => {
+    const targetUser = mgmUsers.find(u => u.id === userId);
+    const userEmail = targetUser?.email;
+    const loadingKey = `mgm-user-${userId}-${newStatus}`;
+    setActionLoading(loadingKey);
+    try {
+      // 1. Optimistic update in UI state
+      setMgmUsers(prev => prev.map(u => u.id === userId ? { ...u, status: newStatus } : u));
+
+      // 2. Save in localStorage so re-reading Google Sheet or refreshing NEVER reverts
+      const localApprovals = getLocalMgmApprovals();
+      localApprovals[userId] = newStatus;
+      if (userEmail && userEmail !== '-') {
+        localApprovals[userEmail.toLowerCase()] = newStatus;
+      }
+      setLocalMgmApprovals(localApprovals);
+
+      // 3. Persist to server (.mgm_approvals.json) & Google Sheets
+      await GoogleSheetsService.approveUser(userId, newStatus, userEmail);
+
+      // 4. Reload candidate data (it will merge with localApprovals and server store)
+      await loadAllCandidateData();
+    } catch (err: any) {
+      console.error('Failed to update MGM user status:', err);
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -1236,10 +1324,327 @@ export default function AdminDashboard() {
           <Settings className="w-4 h-4 mr-2" />
           Manajemen Soal Tes
         </button>
+
+        <button
+          onClick={() => setActiveTab('manage_mgm_team')}
+          className={`flex items-center px-5 py-3 rounded-xl text-sm font-bold transition-all shrink-0 ${
+            activeTab === 'manage_mgm_team'
+              ? 'bg-mgm-dark text-white shadow-md'
+              : 'text-slate-600 hover:text-mgm-dark hover:bg-slate-100'
+          }`}
+        >
+          <ShieldCheck className="w-4 h-4 mr-2" />
+          Persetujuan Tim MGM
+          {mgmUsers.filter(u => u.status === 'Pending').length > 0 ? (
+            <span className="ml-2 px-2.5 py-0.5 text-xs rounded-full bg-amber-500 text-white font-extrabold animate-pulse shadow-sm">
+              {mgmUsers.filter(u => u.status === 'Pending').length} Menunggu
+            </span>
+          ) : (
+            <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-slate-200 text-slate-700 font-extrabold">
+              {mgmUsers.length}
+            </span>
+          )}
+        </button>
       </div>
 
       {/* CONTENT AREA */}
-      {activeTab === 'manage_jobs' ? (
+      {activeTab === 'manage_mgm_team' ? (
+        <div className="space-y-6">
+          {/* Header Card */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 mb-2">
+                  <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
+                  Manajemen Otorisasi Akun
+                </div>
+                <h2 className="text-2xl font-extrabold text-mgm-dark">Persetujuan Akun Tim MGM</h2>
+                <p className="text-slate-500 text-sm mt-1">
+                  Semua akun yang mendaftar dengan role Tim MGM (<code className="bg-slate-100 px-1.5 py-0.5 rounded text-xs font-mono text-slate-700">mgm team / tim_mgm</code>) memerlukan persetujuan Administrator sebelum diizinkan masuk ke sistem.
+                </p>
+              </div>
+
+              <button
+                onClick={loadAllCandidateData}
+                disabled={loading}
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all self-start md:self-auto shrink-0"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+                Segarkan Data
+              </button>
+            </div>
+
+            {/* Quick Metrics */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-slate-100">
+              <div 
+                onClick={() => setMgmFilterStatus('all')}
+                className={`p-4 rounded-xl border transition-all cursor-pointer ${mgmFilterStatus === 'all' ? 'bg-slate-900 text-white border-slate-900 shadow-sm' : 'bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-800'}`}
+              >
+                <div className="text-xs font-semibold opacity-70">Total Akun Tim MGM</div>
+                <div className="text-2xl font-extrabold mt-1">{mgmUsers.length}</div>
+                <div className="text-[11px] opacity-60 mt-0.5">Semua Pendaftaran</div>
+              </div>
+
+              <div 
+                onClick={() => setMgmFilterStatus('Pending')}
+                className={`p-4 rounded-xl border transition-all cursor-pointer ${mgmFilterStatus === 'Pending' ? 'bg-amber-600 text-white border-amber-600 shadow-sm' : 'bg-amber-50/70 border-amber-200 hover:bg-amber-100/70 text-amber-900'}`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold opacity-85">Menunggu Persetujuan</span>
+                  <Clock className="w-3.5 h-3.5 opacity-75" />
+                </div>
+                <div className="text-2xl font-extrabold mt-1">
+                  {mgmUsers.filter(u => u.status === 'Pending').length}
+                </div>
+                <div className="text-[11px] opacity-75 mt-0.5">Membutuhkan Tindakan</div>
+              </div>
+
+              <div 
+                onClick={() => setMgmFilterStatus('Approved')}
+                className={`p-4 rounded-xl border transition-all cursor-pointer ${mgmFilterStatus === 'Approved' ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm' : 'bg-emerald-50/70 border-emerald-200 hover:bg-emerald-100/70 text-emerald-900'}`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold opacity-85">Disetujui (Aktif)</span>
+                  <CheckCircle className="w-3.5 h-3.5 opacity-75" />
+                </div>
+                <div className="text-2xl font-extrabold mt-1">
+                  {mgmUsers.filter(u => u.status === 'Approved').length}
+                </div>
+                <div className="text-[11px] opacity-75 mt-0.5">Dapat Login</div>
+              </div>
+
+              <div 
+                onClick={() => setMgmFilterStatus('Rejected')}
+                className={`p-4 rounded-xl border transition-all cursor-pointer ${mgmFilterStatus === 'Rejected' ? 'bg-rose-600 text-white border-rose-600 shadow-sm' : 'bg-rose-50/70 border-rose-200 hover:bg-rose-100/70 text-rose-900'}`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold opacity-85">Ditolak</span>
+                  <UserX className="w-3.5 h-3.5 opacity-75" />
+                </div>
+                <div className="text-2xl font-extrabold mt-1">
+                  {mgmUsers.filter(u => u.status === 'Rejected').length}
+                </div>
+                <div className="text-[11px] opacity-75 mt-0.5">Akses Dicegah</div>
+              </div>
+            </div>
+
+            {/* Alert if pending */}
+            {mgmUsers.filter(u => u.status === 'Pending').length > 0 && (
+              <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between gap-3 text-amber-900 text-sm">
+                <div className="flex items-center gap-2.5">
+                  <Clock className="w-5 h-5 text-amber-600 shrink-0 animate-pulse" />
+                  <span>
+                    Ada <strong>{mgmUsers.filter(u => u.status === 'Pending').length} akun Tim MGM baru</strong> yang sedang menunggu persetujuan Anda agar dapat masuk ke sistem.
+                  </span>
+                </div>
+                <button
+                  onClick={() => setMgmFilterStatus('Pending')}
+                  className="px-3 py-1.5 bg-amber-600 text-white font-bold text-xs rounded-lg hover:bg-amber-700 transition-all shrink-0"
+                >
+                  Tinjau Sekarang
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Filter & Search Bar */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="relative w-full sm:w-80">
+                <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Cari nama atau email tim..."
+                  value={mgmSearchTerm}
+                  onChange={(e) => setMgmSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm outline-none focus:border-mgm-green focus:ring-1 focus:ring-mgm-green"
+                />
+              </div>
+
+              <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+                {(['all', 'Pending', 'Approved', 'Rejected'] as const).map((st) => (
+                  <button
+                    key={st}
+                    onClick={() => setMgmFilterStatus(st)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 border ${
+                      mgmFilterStatus === st
+                        ? 'bg-mgm-dark text-white border-mgm-dark shadow-sm'
+                        : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    {st === 'all' ? 'Semua' : st === 'Pending' ? 'Menunggu' : st === 'Approved' ? 'Disetujui' : 'Ditolak'}
+                    <span className="ml-1.5 opacity-70">
+                      ({st === 'all' ? mgmUsers.length : mgmUsers.filter(u => u.status === st).length})
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Accounts Table / Cards */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            {(() => {
+              const filteredList = mgmUsers.filter((u) => {
+                const matchStatus = mgmFilterStatus === 'all' || u.status === mgmFilterStatus;
+                const matchSearch =
+                  !mgmSearchTerm ||
+                  u.name.toLowerCase().includes(mgmSearchTerm.toLowerCase()) ||
+                  u.email.toLowerCase().includes(mgmSearchTerm.toLowerCase());
+                return matchStatus && matchSearch;
+              });
+
+              if (filteredList.length === 0) {
+                return (
+                  <div className="text-center py-16 px-4">
+                    <ShieldAlert className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                    <h3 className="text-base font-bold text-slate-700">Tidak Ada Akun Tim MGM</h3>
+                    <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                      {mgmSearchTerm || mgmFilterStatus !== 'all'
+                        ? 'Tidak ada akun yang sesuai dengan filter pencarian Anda.'
+                        : 'Belum ada pendaftaran akun dengan role Tim MGM. Ketika seseorang mendaftar sebagai MGM Team, akunnya akan muncul di sini untuk persetujuan.'}
+                    </p>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="divide-y divide-slate-100">
+                  {filteredList.map((user) => {
+                    const isPending = user.status === 'Pending';
+                    const isApproved = user.status === 'Approved';
+                    const isRejected = user.status === 'Rejected';
+                    const isApproving = actionLoading === `mgm-user-${user.id}-Approved`;
+                    const isRejecting = actionLoading === `mgm-user-${user.id}-Rejected`;
+
+                    return (
+                      <div
+                        key={user.id}
+                        className={`p-5 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+                          isPending ? 'bg-amber-50/30 hover:bg-amber-50/60' : 'hover:bg-slate-50/80'
+                        }`}
+                      >
+                        {/* User Identity */}
+                        <div className="flex items-center gap-4 min-w-0">
+                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-extrabold text-base shrink-0 shadow-sm ${
+                            isPending ? 'bg-amber-100 text-amber-800 border border-amber-300' : isApproved ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-slate-200 text-slate-700'
+                          }`}>
+                            {user.name.charAt(0).toUpperCase()}
+                          </div>
+
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="font-extrabold text-slate-900 text-base">{user.name}</h4>
+                              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                                Role: {user.role}
+                              </span>
+                            </div>
+                            <div className="text-xs text-slate-500 font-medium flex items-center gap-2 mt-0.5">
+                              <span>{user.email}</span>
+                              {user.createdAt && (
+                                <>
+                                  <span>•</span>
+                                  <span>Terdaftar: {new Date(user.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Status Badge & Actions */}
+                        <div className="flex items-center gap-3 shrink-0 self-end md:self-auto">
+                          {/* Badge */}
+                          {isPending && (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold bg-amber-100 text-amber-800 border border-amber-300">
+                              <Clock className="w-3.5 h-3.5 animate-pulse" />
+                              Menunggu Persetujuan
+                            </span>
+                          )}
+                          {isApproved && (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                              <CheckCircle className="w-3.5 h-3.5" />
+                              Disetujui (Aktif)
+                            </span>
+                          )}
+                          {isRejected && (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold bg-rose-100 text-rose-800 border border-rose-300">
+                              <UserX className="w-3.5 h-3.5" />
+                              Ditolak
+                            </span>
+                          )}
+
+                          {/* Action Buttons */}
+                          <div className="flex items-center gap-2">
+                            {isPending && (
+                              <>
+                                <button
+                                  onClick={() => handleApproveMgmUser(user.id, 'Approved')}
+                                  disabled={actionLoading !== null}
+                                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm hover:shadow transition-all disabled:opacity-50"
+                                >
+                                  {isApproving ? (
+                                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                  ) : (
+                                    <Check className="w-3.5 h-3.5" />
+                                  )}
+                                  <span>Setujui</span>
+                                </button>
+
+                                <button
+                                  onClick={() => handleApproveMgmUser(user.id, 'Rejected')}
+                                  disabled={actionLoading !== null}
+                                  className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs rounded-xl transition-all disabled:opacity-50"
+                                >
+                                  {isRejecting ? (
+                                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                  ) : (
+                                    <X className="w-3.5 h-3.5" />
+                                  )}
+                                  <span>Tolak</span>
+                                </button>
+                              </>
+                            )}
+
+                            {isApproved && (
+                              <button
+                                onClick={() => handleApproveMgmUser(user.id, 'Rejected')}
+                                disabled={actionLoading !== null}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-slate-500 hover:text-rose-700 hover:bg-rose-50 font-semibold text-xs rounded-lg transition-all disabled:opacity-50 border border-transparent hover:border-rose-200"
+                              >
+                                {isRejecting ? (
+                                  <RefreshCw className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <X className="w-3 h-3" />
+                                )}
+                                <span>Cabut Akses</span>
+                              </button>
+                            )}
+
+                            {isRejected && (
+                              <button
+                                onClick={() => handleApproveMgmUser(user.id, 'Approved')}
+                                disabled={actionLoading !== null}
+                                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold text-xs rounded-lg transition-all disabled:opacity-50"
+                              >
+                                {isApproving ? (
+                                  <RefreshCw className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <Check className="w-3 h-3" />
+                                )}
+                                <span>Setujui Kembali</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      ) : activeTab === 'manage_jobs' ? (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
           <AdminJobsManager
             onOpenInterviewQuestions={(jobId) => {

@@ -22,7 +22,8 @@ function doPost(e) {
       }
       
       const userId = Utilities.getUuid();
-      const role = data.role || 'applicant';
+      const rawRole = data.role || 'applicant';
+      const role = (rawRole === 'mgm team' || rawRole === 'tim_mgm') ? 'tim_mgm' : rawRole;
       const userStatus = role === 'tim_mgm' ? 'Pending' : 'Approved';
       sheet.appendRow([userId, data.name, data.email, data.password, role, new Date().toISOString(), userStatus]);
       
@@ -38,8 +39,11 @@ function doPost(e) {
       
       if (user) {
         const role = user[4];
-        const status = user[6] || 'Approved';
+        const status = user[6] || (role === 'tim_mgm' ? 'Pending' : 'Approved');
         if (role === 'tim_mgm' && status !== 'Approved') {
+          if (status === 'Rejected') {
+            return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Pendaftaran akun Tim MGM Anda telah ditolak oleh Administrator.' })).setMimeType(ContentService.MimeType.JSON);
+          }
           return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Akun Tim MGM Anda masih menunggu persetujuan Administrator.' })).setMimeType(ContentService.MimeType.JSON);
         }
         return ContentService.createTextOutput(JSON.stringify({ status: 'success', userId: user[0], name: user[1], email: user[2], role: role })).setMimeType(ContentService.MimeType.JSON);

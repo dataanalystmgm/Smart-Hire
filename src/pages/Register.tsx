@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { User } from '../types';
 import { motion } from 'framer-motion';
+import { Clock, CheckCircle, ShieldAlert, ArrowRight } from 'lucide-react';
 import { GoogleSheetsService } from '../services/googleSheets';
 
 export default function Register({ setUser }: { setUser: (u: User) => void }) {
@@ -21,76 +22,37 @@ export default function Register({ setUser }: { setUser: (u: User) => void }) {
     setSuccessMsg('');
 
     try {
-      let regSuccess = false;
-      let registeredUserId = '';
+      const regUser = await GoogleSheetsService.registerUser({
+        name: name.trim(),
+        email: email.trim(),
+        password: password.trim(),
+        role
+      });
 
-      try {
-        const directRes = await GoogleSheetsService.registerUser({
-          name: name.trim(),
-          email: email.trim(),
-          password: password.trim(),
-          role
-        });
-        if (directRes?.userId) {
-          regSuccess = true;
-          registeredUserId = directRes.userId;
-        }
-      } catch (directErr: any) {
-        if (directErr.message?.includes('sudah terdaftar') || directErr.message?.includes('already exists')) {
-          setError(directErr.message);
+      if (regUser && regUser.userId) {
+        if (role === 'mgm team' || regUser.userStatus === 'Pending') {
+          setSuccessMsg('Pendaftaran berhasil! Akun Tim MGM Anda saat ini berstatus "Menunggu Persetujuan". Anda baru dapat masuk ke sistem setelah Administrator menyetujui akun Anda.');
           setLoading(false);
           return;
         }
-        console.warn('Direct register failed, trying proxy fallback:', directErr);
-      }
 
-      if (!regSuccess) {
-        const response = await fetch('/api/gas/proxy', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'register', name, email, password, role })
-        });
-        const data = await response.json();
-        if (data.status === 'success' || data.mocked) {
-          regSuccess = true;
-          registeredUserId = data.userId || 'usr_' + Math.random().toString(36).substring(2, 9);
-        } else {
-          setError(data.message || 'Registration failed');
-          setLoading(false);
-          return;
-        }
-      }
-      
-      if (regSuccess) {
-        if (role === 'mgm team') {
-          setSuccessMsg('Registrasi berhasil sebagai MGM Team. Akun Anda sedang menunggu persetujuan administrator.');
-          setLoading(false);
-          setTimeout(() => {
-            navigate('/login');
-          }, 3500);
-          return;
-        }
-
-        const user = { userId: registeredUserId || 'user_' + Math.random(), name, email, role: 'applicant' as const };
+        const user: User = {
+          userId: regUser.userId,
+          name: regUser.name,
+          email: regUser.email,
+          role: 'applicant'
+        };
         setUser(user);
         localStorage.setItem('mgm_user', JSON.stringify(user));
         navigate('/dashboard');
+      } else {
+        throw new Error('Gagal mendaftarkan akun. Silakan coba kembali.');
       }
-    } catch (err) {
-      if (role === 'mgm team') {
-        setSuccessMsg('Registrasi berhasil sebagai MGM Team. Akun Anda sedang menunggu persetujuan administrator.');
-        setLoading(false);
-        setTimeout(() => navigate('/login'), 3500);
-        return;
-      }
-      const user = { userId: 'user_' + Math.random(), name, email, role: 'applicant' as const };
-      setUser(user);
-      localStorage.setItem('mgm_user', JSON.stringify(user));
-      navigate('/dashboard');
+    } catch (err: any) {
+      console.error('Registration failed:', err);
+      setError(err.message || 'Pendaftaran gagal. Silakan coba beberapa saat lagi.');
     } finally {
-      if (role !== 'mgm team') {
-        setLoading(false);
-      }
+      setLoading(false);
     }
   };
 
@@ -106,9 +68,35 @@ export default function Register({ setUser }: { setUser: (u: User) => void }) {
           <p className="text-slate-500 mt-2 font-medium">Mulai perjalanan karir Anda bersama MGM SmartHire</p>
         </div>
         
-        {error && <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-xl">{error}</div>}
-        {successMsg && <div className="mb-4 p-3 bg-green-50 text-green-700 text-sm rounded-xl font-medium">{successMsg}</div>}
+        {error && <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-xl border border-red-200">{error}</div>}
         
+        {successMsg ? (
+          <div className="p-6 bg-amber-50 border border-amber-200 rounded-2xl text-center space-y-4">
+            <div className="w-14 h-14 bg-amber-100 text-amber-700 rounded-2xl flex items-center justify-center mx-auto shadow-inner">
+              <Clock className="w-8 h-8 animate-pulse" />
+            </div>
+            <div>
+              <h3 className="text-xl font-extrabold text-amber-950">Menunggu Persetujuan Admin</h3>
+              <p className="text-xs text-amber-800 mt-2 leading-relaxed">
+                {successMsg}
+              </p>
+            </div>
+            <div className="p-3 bg-white/70 rounded-xl text-left border border-amber-200/60 text-xs text-slate-600 space-y-1">
+              <div className="font-bold text-slate-700">Detail Akun:</div>
+              <div>• Nama: <span className="font-semibold text-slate-800">{name}</span></div>
+              <div>• Email: <span className="font-semibold text-slate-800">{email}</span></div>
+              <div>• Role: <span className="font-semibold text-amber-700">Tim MGM (Internal)</span></div>
+              <div>• Status: <span className="font-semibold text-amber-600">Pending Approval</span></div>
+            </div>
+            <Link
+              to="/login"
+              className="w-full flex items-center justify-center gap-2 bg-mgm-dark text-white font-bold py-3.5 px-4 rounded-xl hover:bg-opacity-90 transition-all shadow-md text-sm"
+            >
+              <span>Ke Halaman Masuk (Login)</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        ) : (
         <form onSubmit={handleRegister} className="space-y-5">
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-1.5">Nama Lengkap</label>
@@ -178,6 +166,7 @@ export default function Register({ setUser }: { setUser: (u: User) => void }) {
             {loading ? 'Memproses...' : 'Daftar'}
           </button>
         </form>
+        )}
         
         <p className="mt-8 text-center text-sm text-slate-500 font-medium">
           Sudah punya akun? <Link to="/login" className="text-mgm-green hover:underline font-bold">Masuk di sini</Link>

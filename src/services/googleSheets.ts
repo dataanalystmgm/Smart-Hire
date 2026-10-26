@@ -16,7 +16,7 @@ export const SHEET_SCHEMAS = {
     'Experience', 'Education', 'Certifications', 'Skills', 'ResumeUrl', 'Notes', 'Rating'
   ],
   Users: [
-    'ID', 'Name', 'Email', 'Password', 'Role', 'CreatedAt', 'AvatarUrl'
+    'ID', 'Name', 'Email', 'Password', 'Role', 'CreatedAt', 'Status', 'AvatarUrl'
   ],
   Documents: [
     'UserID', 'DocumentType', 'FileName', 'FileUrl', 'CreatedAt'
@@ -104,8 +104,10 @@ export async function readSheetDirect(sheetName: string): Promise<Record<string,
   }
 }
 
+export const GAS_URL = 'https://script.google.com/macros/s/AKfycbxxQ9HDOmYQ7ThrqP-8gOpLfPnU3B0W18jAci-lTVWFCYA_WmDV4KIuEcAtcjIN2kPqiQ/exec';
+
 /**
- * Appends a new row directly to a Google Sheet via Sheets API v4 or server proxy
+ * Appends a new row directly to a Google Sheet via Sheets API v4, server proxy, or Google Apps Script
  */
 export async function appendSheetRow(sheetName: string, rowValues: any[]): Promise<boolean> {
   const token = await getAccessToken();
@@ -129,7 +131,7 @@ export async function appendSheetRow(sheetName: string, rowValues: any[]): Promi
     }
   }
 
-  // Fallback to server route
+  // Fallback to server route (local Express server or Vercel serverless /api)
   try {
     const res = await fetch('/api/sheets/append', {
       method: 'POST',
@@ -142,12 +144,37 @@ export async function appendSheetRow(sheetName: string, rowValues: any[]): Promi
         values: [rowValues]
       })
     });
-    const data = await res.json();
-    return data.status === 'success';
+    if (res.ok) {
+      const data = await res.json();
+      if (data.status === 'success') return true;
+    }
   } catch (err) {
-    console.error(`Error appending row to ${sheetName}:`, err);
-    return false;
+    console.warn(`Proxy append row to ${sheetName} failed:`, err);
   }
+
+  // Fallback to direct Google Apps Script Web App call (works directly on Vercel without backend)
+  try {
+    if (sheetName === 'Users') {
+      const [userId, name, email, password, role] = rowValues;
+      const gasRes = await fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'register',
+          name,
+          email,
+          password,
+          role: role === 'mgm team' ? 'tim_mgm' : (role || 'applicant')
+        })
+      });
+      const data = await gasRes.json().catch(() => null);
+      if (data?.status === 'success') return true;
+    }
+  } catch (gasErr) {
+    console.warn(`Direct GAS append fallback failed for ${sheetName}:`, gasErr);
+  }
+
+  return false;
 }
 
 /**
@@ -695,28 +722,114 @@ export const GoogleSheetsService = {
   },
 
   async registerUser(userData: { name: string; email: string; password?: string; role?: string; avatarUrl?: string }) {
-    const existing = await readSheetDirect('Users');
-    const duplicate = existing.find(u => String(u.Email || u.email).toLowerCase() === userData.email.toLowerCase());
-    if (duplicate) {
-      throw new Error('Email sudah terdaftar di sistem');
+    const cleanEmail = String(userData.email || '').trim().toLowerCase();
+    const cleanName = String(userData.name || '').trim();
+    const cleanPassword = String(userData.password || '').trim();
+    const cleanRole = userData.role === 'mgm team' ? 'tim_mgm' : (userData.role || 'applicant');
+
+    // 1. Check if email already exists in Users sheet
+    try {
+      const existing = await readSheetDirect('Users');
+      const duplicate = existing.find(u => String(u.Email || u.email || '').trim().toLowerCase() === cleanEmail);
+      if (duplicate) {
+        throw new Error('Email sudah terdaftar di sistem. Silakan masuk menggunakan akun Anda.');
+      }
+    } catch (checkErr: any) {
+      if (checkErr.message?.includes('sudah terdaftar')) {
+        throw checkErr;
+      }
+      console.warn('Pre-check for existing user warning:', checkErr.message);
     }
 
-    const userId = 'usr_' + Math.random().toString(36).substring(2, 9);
-    const row = [
-      userId,
-      userData.name,
-      userData.email,
-      userData.password || '',
-      userData.role || 'applicant',
-      new Date().toISOString(),
-      userData.avatarUrl || ''
-    ];
-    await appendSheetRow('Users', row);
+    let registeredUserId = '';
+    let userStatus = cleanRole === 'tim_mgm' ? 'Pending' : 'Approved';
+
+    // 2. Try proxy endpoint /api/gas/proxy first (local dev server or Vercel serverless /api)
+    try {
+      const res = await fetch('/api/gas/proxy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'register',
+          name: cleanName,
+          email: cleanEmail,
+          password: cleanPassword,
+          role: cleanRole
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.status === 'success' && data.userId) {
+          registeredUserId = data.userId;
+          if (data.userStatus) userStatus = data.userStatus;
+        } else if (data.status === 'error' && (data.message?.includes('already exists') || data.message?.includes('sudah terdaftar'))) {
+          throw new Error('Email sudah terdaftar di sistem. Silakan masuk menggunakan akun Anda.');
+        }
+      }
+    } catch (proxyErr: any) {
+      if (proxyErr.message?.includes('sudah terdaftar')) {
+        throw proxyErr;
+      }
+      console.warn('Proxy registration failed, attempting direct GAS Web App call:', proxyErr);
+    }
+
+    // 3. Fallback: Direct call to GAS Web App (works directly on Vercel static hosting)
+    if (!registeredUserId) {
+      try {
+        const gasRes = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'register',
+            name: cleanName,
+            email: cleanEmail,
+            password: cleanPassword,
+            role: cleanRole
+          })
+        });
+        const gasData = await gasRes.json().catch(() => null);
+        if (gasData?.status === 'success' && gasData.userId) {
+          registeredUserId = gasData.userId;
+          if (gasData.userStatus) userStatus = gasData.userStatus;
+        } else if (gasData?.status === 'error' && (gasData.message?.includes('already exists') || gasData.message?.includes('sudah terdaftar'))) {
+          throw new Error('Email sudah terdaftar di sistem. Silakan masuk menggunakan akun Anda.');
+        }
+      } catch (gasErr: any) {
+        if (gasErr.message?.includes('sudah terdaftar')) {
+          throw gasErr;
+        }
+        console.warn('Direct GAS Web App register failed, trying appendSheetRow:', gasErr);
+      }
+    }
+
+    // 4. Fallback: Sheets API v4 or /api/sheets/append
+    if (!registeredUserId) {
+      const fallbackId = 'usr_' + Math.random().toString(36).substring(2, 9);
+      const row = [
+        fallbackId,
+        cleanName,
+        cleanEmail,
+        cleanPassword,
+        cleanRole,
+        new Date().toISOString(),
+        userStatus
+      ];
+      const appended = await appendSheetRow('Users', row);
+      if (appended) {
+        registeredUserId = fallbackId;
+      }
+    }
+
+    if (!registeredUserId) {
+      throw new Error('Gagal menyimpan pendaftaran ke Google Sheet. Silakan coba beberapa saat lagi.');
+    }
+
     return {
-      userId,
-      name: userData.name,
-      email: userData.email,
-      role: userData.role || 'applicant',
+      userId: registeredUserId,
+      name: cleanName,
+      email: cleanEmail,
+      role: cleanRole === 'tim_mgm' ? 'mgm team' : 'applicant',
+      userStatus,
       avatarUrl: userData.avatarUrl || ''
     };
   },
@@ -724,6 +837,8 @@ export const GoogleSheetsService = {
   async loginUser(email: string, password?: string) {
     const cleanEmail = String(email || '').trim().toLowerCase();
     const cleanPass = password !== undefined ? String(password).trim() : undefined;
+    
+    // 1. Try reading from sheet
     const existing = await readSheetDirect('Users');
     const user = existing.find(u => {
       const uEmail = String(u.Email || u.email || '').trim().toLowerCase();
@@ -734,24 +849,116 @@ export const GoogleSheetsService = {
       return uEmail === cleanEmail;
     });
 
-    if (!user) {
-      throw new Error('Kredensial tidak valid. Silakan periksa kembali email dan password Anda.');
+    if (user) {
+      const rawRole = String(user.Role || user.role || '').trim().toLowerCase();
+      let status = String(user.Status || user.status || '').trim();
+
+      // Check local storage approval overrides
+      try {
+        const stored = localStorage.getItem('mgm_user_approvals');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          const override = parsed[user.ID || user.id] || parsed[cleanEmail];
+          if (override) status = override;
+        }
+      } catch {}
+
+      if (!status) {
+        status = (rawRole === 'tim_mgm' || rawRole === 'mgm team') ? 'Pending' : 'Approved';
+      }
+
+      if (rawRole === 'tim_mgm' || rawRole === 'mgm team') {
+        if (status.toLowerCase() === 'rejected' || status.toLowerCase() === 'ditolak') {
+          throw new Error('Pendaftaran akun Tim MGM Anda telah ditolak oleh Administrator.');
+        }
+        if (status.toLowerCase() !== 'approved' && status.toLowerCase() !== 'disetujui') {
+          throw new Error('Akun Tim MGM Anda masih menunggu persetujuan Administrator.');
+        }
+      }
+      const mappedRole = (rawRole.includes('admin') || rawRole.includes('mgm') || cleanEmail === 'analisdatamgm@gmail.com') ? 'admin' : 'applicant';
+
+      return {
+        userId: user.ID || user.id,
+        name: user.Name || user.name,
+        email: user.Email || user.email,
+        role: mappedRole,
+        userStatus: status,
+        avatarUrl: user.AvatarUrl || user.avatarUrl || ''
+      };
     }
 
-    const rawRole = String(user.Role || user.role || '').trim().toLowerCase();
-    const mappedRole = (rawRole.includes('admin') || rawRole.includes('mgm team') || cleanEmail === 'analisdatamgm@gmail.com') ? 'admin' : 'applicant';
+    // 2. Fallback: Direct query to GAS login action in case Google Sheet GViz had a cache delay
+    try {
+      const gasRes = await fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'login', email: cleanEmail, password: cleanPass })
+      });
+      const gasData = await gasRes.json().catch(() => null);
+      if (gasData?.status === 'success' && gasData.userId) {
+        const rawRole = String(gasData.role || '').trim().toLowerCase();
+        const mappedRole = (rawRole.includes('admin') || rawRole.includes('mgm') || cleanEmail === 'analisdatamgm@gmail.com') ? 'admin' : 'applicant';
+        return {
+          userId: gasData.userId,
+          name: gasData.name,
+          email: gasData.email,
+          role: mappedRole,
+          avatarUrl: ''
+        };
+      } else if (gasData?.message?.includes('menunggu persetujuan') || gasData?.message?.includes('ditolak')) {
+        throw new Error(gasData.message);
+      }
+    } catch (gasLoginErr: any) {
+      if (gasLoginErr.message?.includes('menunggu persetujuan') || gasLoginErr.message?.includes('ditolak')) {
+        throw gasLoginErr;
+      }
+    }
 
-    return {
-      userId: user.ID || user.id,
-      name: user.Name || user.name,
-      email: user.Email || user.email,
-      role: mappedRole,
-      avatarUrl: user.AvatarUrl || user.avatarUrl || ''
-    };
+    throw new Error('Kredensial tidak valid. Silakan periksa kembali email dan password Anda.');
+  },
+
+  async approveUser(userId: string, status: 'Approved' | 'Rejected' | 'Pending' = 'Approved', userEmail?: string) {
+    // 1. Update server store via dedicated endpoint
+    try {
+      await fetch('/api/users/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, userEmail, status })
+      });
+    } catch (e) {
+      console.warn('API /api/users/approve warning:', e);
+    }
+
+    // 2. Call local / server proxy /api/gas/proxy
+    try {
+      await fetch('/api/gas/proxy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'approve_user', userId, userEmail, status })
+      });
+    } catch (e) {
+      console.warn('Proxy approve_user call warning:', e);
+    }
+
+    // 3. Update Column G (0-indexed 6: Status) in Google Sheets Users sheet
+    await findAndUpdateRow('Users', 0, userId, 6, status);
+
+    // 4. Direct GAS fallback
+    try {
+      await fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'approve_user', userId, status })
+      });
+    } catch (gasErr) {
+      console.warn('Direct GAS approve_user call warning:', gasErr);
+    }
+
+    return true;
   },
 
   async updateUserAvatar(userId: string, avatarUrl: string) {
-    return await findAndUpdateRow('Users', 0, userId, 6, avatarUrl);
+    return await findAndUpdateRow('Users', 0, userId, 7, avatarUrl);
   },
 
   // DOCUMENTS
