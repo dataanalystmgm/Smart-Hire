@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, MapPin, Clock, Briefcase, ChevronRight, Users, 
   TrendingUp, CheckCircle, Brain, X, Loader2, Info, Upload, 
-  AlertTriangle, DollarSign, Building2, Star, Sparkles, ArrowRight, ShieldCheck, Heart 
+  AlertTriangle, DollarSign, Building2, Star, Sparkles, ArrowRight, ShieldCheck, Heart, FileText 
 } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Job, Company } from '../types';
@@ -24,9 +24,10 @@ export default function Home() {
   const [searchWhere, setSearchWhere] = useState('All');
 
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
-  const [resumeText, setResumeText] = useState("");
-  const [isMatching, setIsMatching] = useState(false);
-  const [matchResult, setMatchResult] = useState<{score: string, summary: string} | null>(null);
+  const [existingCv, setExistingCv] = useState<{ fileName: string; fileUrl?: string; uploadedAt?: string } | null>(null);
+  const [useExistingCv, setUseExistingCv] = useState(true);
+  const [selectedCvFile, setSelectedCvFile] = useState<File | null>(null);
+  const [isCheckingCv, setIsCheckingCv] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -61,67 +62,52 @@ export default function Home() {
     navigate(`/lowongan?${params.toString()}`);
   };
 
-  const handleApplyClick = (job: Job) => {
-    const user = localStorage.getItem('mgm_user');
-    if (!user) {
+  const handleApplyClick = async (job: Job) => {
+    const rawUser = localStorage.getItem('mgm_user');
+    if (!rawUser) {
       navigate(`/login?redirect=apply&jobId=${job.id}`);
-    } else {
-      setSelectedJob(job);
-      setResumeText("");
-      setMatchResult(null);
+      return;
+    }
+    
+    setSelectedJob(job);
+    setSelectedCvFile(null);
+    setIsCheckingCv(true);
+
+    try {
+      const user = JSON.parse(rawUser);
+      const cv = await GoogleSheetsService.getApplicantExistingCv(user.userId);
+      setExistingCv(cv);
+      setUseExistingCv(!!cv);
+    } catch (e) {
+      console.warn('Error checking existing CV:', e);
+      setExistingCv(null);
+      setUseExistingCv(false);
+    } finally {
+      setIsCheckingCv(false);
     }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setIsMatching(true);
-    setMatchResult(null);
+    setSelectedCvFile(file);
+    setUseExistingCv(false);
 
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      let text = event.target?.result as string;
-      if (!text || text.trim().length < 50) {
-        text = `Kandidat ini memiliki pengalaman di bidang ${selectedJob?.department} dan memiliki keterampilan dasar yang relevan dengan posisi ${selectedJob?.title}.`;
+    try {
+      const rawUser = localStorage.getItem('mgm_user');
+      if (rawUser) {
+        const user = JSON.parse(rawUser);
+        const stored = localStorage.getItem(`mgm_uploaded_docs_${user.userId}`);
+        const parsed = stored ? JSON.parse(stored) : {};
+        parsed.CV = {
+          fileName: file.name,
+          fileUrl: '',
+          uploadedAt: new Date().toISOString()
+        };
+        localStorage.setItem(`mgm_uploaded_docs_${user.userId}`, JSON.stringify(parsed));
       }
-      setResumeText(text);
-
-      try {
-        const response = await fetch('/api/analyze-resume', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            resumeText: text,
-            jobDescription: `Title: ${selectedJob?.title}\nRequirements: ${selectedJob?.requirements.join(', ')}`
-          })
-        });
-
-        const data = await response.json();
-        if (response.ok) {
-          const scoreMatch = data.result.match(/(\d{1,3})/);
-          const score = scoreMatch ? scoreMatch[1] : "80";
-          setMatchResult({
-            score,
-            summary: data.result
-          });
-        } else {
-          setMatchResult({
-            score: "78",
-            summary: "Profil memenuhi kualifikasi standar posisi ini."
-          });
-        }
-      } catch (error) {
-        console.error(error);
-        setMatchResult({
-          score: "80",
-          summary: "Profil memenuhi kualifikasi standar posisi ini."
-        });
-      } finally {
-        setIsMatching(false);
-      }
-    };
-    reader.readAsText(file);
+    } catch {}
   };
 
   const handleConfirmApply = async () => {
@@ -132,12 +118,19 @@ export default function Home() {
       const applications = stored ? JSON.parse(stored) : [];
       const user = JSON.parse(localStorage.getItem('mgm_user') || '{}');
 
+      const activeResumeName = (useExistingCv && existingCv)
+        ? existingCv.fileName
+        : (selectedCvFile ? selectedCvFile.name : 'CV_Pelamar.pdf');
+      const activeResumeUrl = (useExistingCv && existingCv) ? (existingCv.fileUrl || '') : '';
+
       const newApp = {
         id: 'app_' + Math.random().toString(36).substr(2, 9),
         userId: user.userId || 'user1',
         jobId: selectedJob?.id,
         status: 'Pre Screening',
         stage: 'Pre Screening',
+        resumeUrl: activeResumeUrl,
+        resumeName: activeResumeName,
         createdAt: new Date().toISOString()
       };
 
@@ -152,9 +145,9 @@ export default function Home() {
         jobTitle: selectedJob.title,
         location: selectedJob.location,
         email: user.email || '',
-        notes: matchResult?.summary || '',
-        aiAnalysis: matchResult?.summary || '',
-        fitScore: parseInt(matchResult?.score || '80'),
+        resumeUrl: activeResumeUrl,
+        notes: `CV: ${activeResumeName}`,
+        aiAnalysis: '',
         stage: 'Pre Screening'
       });
     } catch (err) {
@@ -643,37 +636,83 @@ export default function Home() {
 
               <div className="space-y-3">
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                  Unggah CV / Resume
+                  Berkas CV / Resume
                 </label>
-                <div className="border-2 border-dashed border-slate-300 hover:border-mgm-green rounded-2xl p-6 text-center transition-colors bg-slate-50 relative">
-                  <Upload className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-                  <p className="text-xs font-semibold text-slate-700">Pilih berkas PDF atau Word</p>
-                  <p className="text-[11px] text-slate-400 mt-1">Sistem AI akan otomatis menganalisis kesesuaian profil.</p>
-                  <input 
-                    type="file" 
-                    accept=".pdf,.doc,.docx,.txt" 
-                    onChange={handleFileUpload} 
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
-                  />
-                </div>
-              </div>
 
-              {isMatching && (
-                <div className="p-4 bg-mgm-light border border-mgm-green/30 rounded-2xl flex items-center space-x-3 text-xs text-mgm-dark font-semibold">
-                  <Loader2 className="w-4 h-4 animate-spin text-mgm-green" />
-                  <span>Menganalisis resume dengan kualifikasi...</span>
-                </div>
-              )}
-
-              {matchResult && (
-                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl space-y-2">
-                  <div className="flex items-center justify-between text-xs font-bold text-emerald-900">
-                    <span>Skor Kecocokan AI:</span>
-                    <span className="text-base font-black text-emerald-700">{matchResult.score}%</span>
+                {isCheckingCv ? (
+                  <div className="p-6 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-center space-x-3 text-xs text-slate-500 font-medium">
+                    <Loader2 className="w-5 h-5 animate-spin text-mgm-green" />
+                    <span>Memeriksa berkas CV dari profil Anda...</span>
                   </div>
-                  <p className="text-xs text-emerald-800">{matchResult.summary}</p>
-                </div>
-              )}
+                ) : existingCv && useExistingCv ? (
+                  <div className="p-4 bg-emerald-50/90 border border-emerald-200 rounded-2xl space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start space-x-3">
+                        <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
+                          <FileText className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-sm font-extrabold text-emerald-950">
+                              {existingCv.fileName}
+                            </span>
+                            <span className="px-2 py-0.5 bg-emerald-200/80 text-emerald-800 text-[10px] font-black rounded-md uppercase tracking-wider">
+                              CV Profil Terpasang
+                            </span>
+                          </div>
+                          <p className="text-xs text-emerald-800 mt-1">
+                            Berkas CV dari profil Anda sudah siap. Cukup klik <strong>Kirim Lamaran Sekarang</strong> di bawah tanpa perlu mengunggah ulang.
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setUseExistingCv(false)}
+                        className="text-xs font-bold text-slate-600 hover:text-rose-600 hover:underline shrink-0 bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 shadow-2xs"
+                      >
+                        Ganti Berkas
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {existingCv && (
+                      <div className="flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => setUseExistingCv(true)}
+                          className="text-xs text-mgm-green font-bold hover:underline"
+                        >
+                          ← Gunakan Berkas CV Profil ({existingCv.fileName})
+                        </button>
+                      </div>
+                    )}
+                    <div className="border-2 border-dashed border-slate-300 hover:border-mgm-green rounded-2xl p-6 text-center transition-colors bg-slate-50 relative">
+                      <Upload className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                      {selectedCvFile ? (
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-center space-x-2 text-emerald-700 font-bold text-xs">
+                            <FileText className="w-4 h-4" />
+                            <span>{selectedCvFile.name}</span>
+                          </div>
+                          <p className="text-[11px] text-emerald-600 font-medium">Berkas siap dilampirkan pada lamaran</p>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="text-xs font-semibold text-slate-700">Pilih berkas PDF atau Word</p>
+                          <p className="text-[11px] text-slate-400 mt-1">Berkas ini akan otomatis dilampirkan langsung pada lamaran Anda.</p>
+                        </>
+                      )}
+                      <input 
+                        type="file" 
+                        accept=".pdf,.doc,.docx,.txt" 
+                        onChange={handleFileSelect} 
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
 
               <div className="flex gap-3 pt-2">
                 <button
@@ -684,13 +723,13 @@ export default function Home() {
                 </button>
                 <button
                   onClick={handleConfirmApply}
-                  disabled={isSubmitting || isMatching}
-                  className="flex-1 bg-mgm-green hover:bg-[#e00050] text-white font-extrabold py-3.5 rounded-xl shadow-md transition-all flex items-center justify-center space-x-2"
+                  disabled={isSubmitting || isCheckingCv || (!existingCv && !selectedCvFile) || (!useExistingCv && !selectedCvFile)}
+                  className="flex-1 bg-mgm-green hover:bg-[#e00050] text-white font-extrabold py-3.5 rounded-xl shadow-md transition-all flex items-center justify-center space-x-2 disabled:opacity-50"
                 >
                   {isSubmitting ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
-                    <span>Kirim Lamaran</span>
+                    <span>Kirim Lamaran Sekarang</span>
                   )}
                 </button>
               </div>

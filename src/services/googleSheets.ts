@@ -970,6 +970,73 @@ export const GoogleSheetsService = {
     return docs;
   },
 
+  async getApplicantExistingCv(userId: string): Promise<{ fileName: string; fileUrl?: string; uploadedAt?: string } | null> {
+    if (!userId) return null;
+
+    // 1. Check local storage documents (fastest)
+    try {
+      const storedDocs = localStorage.getItem(`mgm_uploaded_docs_${userId}`);
+      if (storedDocs) {
+        const parsed = JSON.parse(storedDocs);
+        if (parsed && (parsed.CV || parsed.cv)) {
+          const cvDoc = parsed.CV || parsed.cv;
+          return {
+            fileName: cvDoc.fileName || cvDoc.name || 'CV_Pelamar.pdf',
+            fileUrl: cvDoc.fileUrl || '',
+            uploadedAt: cvDoc.uploadedAt || ''
+          };
+        }
+      }
+    } catch (e) {
+      console.warn('Error reading local uploaded docs:', e);
+    }
+
+    // 2. Check local raw CV text in localStorage
+    try {
+      const rawCv = localStorage.getItem('mgm_user_cv');
+      if (rawCv && rawCv.trim().length > 20) {
+        return {
+          fileName: 'CV_Profil_Pelamar.pdf',
+          fileUrl: '',
+          uploadedAt: new Date().toISOString()
+        };
+      }
+    } catch {}
+
+    // 3. Check Google Sheet Documents tab
+    try {
+      const docs = await this.getDocuments(userId);
+      const cvDoc = docs.find((d: any) => {
+        const type = String(d.DocumentType || d.documentType || '').trim().toUpperCase();
+        const name = String(d.FileName || d.fileName || '').trim().toLowerCase();
+        return type === 'CV' || name.includes('cv') || name.includes('resume');
+      });
+      if (cvDoc) {
+        const fileName = cvDoc.FileName || cvDoc.fileName || 'CV_Pelamar.pdf';
+        const fileUrl = cvDoc.FileUrl || cvDoc.fileUrl || '';
+        const uploadedAt = cvDoc.CreatedAt || cvDoc.createdAt || '';
+
+        // Cache in localStorage for future instant access
+        try {
+          const stored = localStorage.getItem(`mgm_uploaded_docs_${userId}`);
+          const parsed = stored ? JSON.parse(stored) : {};
+          parsed.CV = { fileName, fileUrl, uploadedAt };
+          localStorage.setItem(`mgm_uploaded_docs_${userId}`, JSON.stringify(parsed));
+        } catch {}
+
+        return {
+          fileName,
+          fileUrl,
+          uploadedAt
+        };
+      }
+    } catch (e) {
+      console.warn('Error fetching docs from Google Sheets:', e);
+    }
+
+    return null;
+  },
+
   async saveDocument(docData: { userId: string; documentType: string; fileName: string; fileUrl: string }) {
     const row = [
       docData.userId,
